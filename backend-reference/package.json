@@ -9,6 +9,7 @@
   "dependencies": {
     "@anthropic-ai/sdk": "latest",
     "@aws-sdk/client-s3": "^3.600.0",
+    "stripe": "23.0.0",
     "zod": "^4.6.7"
   }
 }
