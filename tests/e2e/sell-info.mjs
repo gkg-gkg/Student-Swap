@@ -17,8 +17,9 @@ await page.waitForSelector('#wizard h1');
 check('signed-in user goes straight to the wizard', page.url().includes('/sell/new'));
 // header link goes to the info page
 await go(page, '/');
-await page.click('.nav-desktop a:has-text("Sell Tickets")');
+const mobile = page.viewportSize().width < 768;
+await page.click(mobile ? '.bottom-nav__sell' : '.nav-desktop a:has-text("Sell Tickets")');
 await page.waitForSelector('.sell-hero');
-check('nav "Sell Tickets" opens the info page', true);
+check(`${mobile ? 'bottom nav' : 'nav'} "Sell Tickets" opens the info page`, true);
 finish(errors);
 await browser.close();

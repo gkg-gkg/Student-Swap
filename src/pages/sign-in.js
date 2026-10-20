@@ -3,7 +3,7 @@ import { auth, AuthError } from '../auth/index.js';
 import { USE_MOCKS } from '../config/env.js';
 import { values, setFieldError, clearFieldErrors, setFormError, focusFirstError, busy } from '../lib/forms.js';
 import { field } from '../components/ui.js';
-import { navigate } from '../router.js';
+import { navigate, safeNext } from '../router.js';
 
 /** @param {{ query: URLSearchParams }} ctx */
 export default function render({ query }) {
@@ -38,7 +38,7 @@ export default function render({ query }) {
         busy(btn, true, 'Signing in…');
         try {
           await auth.signIn({ email: v.email, password: v.password });
-          navigate(next ?? '/browse');
+          navigate(safeNext(next));
         } catch (err) {
           busy(btn, false);
           if (err instanceof AuthError && err.code === 'UserNotConfirmedException')

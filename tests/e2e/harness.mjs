@@ -5,8 +5,8 @@ import { chromium } from 'playwright-core';
 export const BASE = process.env.BASE_URL ?? 'http://localhost:5173';
 const CHROME = process.env.CHROME_PATH ?? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 
-/** @param {{ width?: number, height?: number }} [size] */
-export async function launch({ width = 1280, height = 900 } = {}) {
+/** Viewport defaults to desktop; set E2E_WIDTH=390 to run any suite at phone size. @param {{ width?: number, height?: number }} [size] */
+export async function launch({ width = Number(process.env.E2E_WIDTH ?? 1280), height = width < 768 ? 844 : 900 } = {}) {
   const browser = await chromium.launch({ executablePath: CHROME, headless: true });
   const context = await browser.newContext({ viewport: { width, height } });
   const page = await context.newPage();

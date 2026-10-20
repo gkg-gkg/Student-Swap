@@ -67,6 +67,13 @@ function setMeta(name, content, attr = 'name') {
   el.setAttribute('content', content);
 }
 
+/** Where to go after signing in: an in-app path that isn't a sign-in/sign-up page (avoids loops), else Browse. @param {string | null | undefined} next */
+export function safeNext(next) {
+  const path = next?.split('?')[0] ?? '';
+  const guest = routes.some((r) => r.guest && r.path === path);
+  return path.startsWith('/') && !guest ? /** @type {string} */ (next) : '/browse';
+}
+
 export const navigate = (/** @type {string} */ to) => {
   location.hash = '#' + to;
 };
@@ -89,7 +96,7 @@ export async function renderRoute() {
     setMeta('og:title', page.title, 'property');
     setMeta('og:description', page.description ?? '', 'property');
     setMeta('og:site_name', brand.name, 'property');
-    setMeta('og:image', `https://${brand.domain}/public/og-image.png`, 'property');
+    setMeta('og:image', new URL('public/og-image.png', location.href.split('#')[0]).href, 'property');
     setMeta('twitter:card', 'summary_large_image');
     const focus = page.layout === 'focus';
     mount(
@@ -111,9 +118,9 @@ export async function renderRoute() {
     const { route, params } = found;
     const next = encodeURIComponent(path + (rawQuery ? '?' + rawQuery : ''));
 
-    if (route.auth && !user) return navigate(`/sign-in?next=${next}`);
+    if (route.auth && !user) return navigate(`/sign-in?next=${next}`); // auth routes are never guest routes, so no loop
     if (user && !user.profileComplete && path !== '/sign-up') return navigate('/sign-up?step=profile');
-    if (route.guest && user?.profileComplete) return navigate(query.get('next') ?? '/browse');
+    if (route.guest && user?.profileComplete) return navigate(safeNext(query.get('next')));
     if (route.admin && user?.role !== 'admin')
       return paint((await import('./pages/not-found.js')).default({ path, forbidden: true }), user);
 

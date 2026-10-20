@@ -47,5 +47,15 @@ await page.evaluate(() => localStorage.removeItem('ss.session'));
 await signIn(page);
 check('demo user signs in', (await page.textContent('.header-user')).includes('Alex'));
 
+// A "next" that points back at a sign-in page must not loop
+await page.evaluate(() => localStorage.removeItem('ss.session'));
+await page.reload();
+await go(page, '/sign-in?next=%2Fsign-in');
+await page.fill('#email', 'demo@bham.ac.uk');
+await page.fill('#password', 'Password1!');
+await page.click('button[type=submit]');
+await page.waitForURL(/#\/browse/);
+check('next=/sign-in falls back to browse', true);
+
 finish(errors);
 await browser.close();

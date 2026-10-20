@@ -196,7 +196,8 @@ export default function render({ query }) {
     sortEl.addEventListener('change', () => (readState(), sync()));
     qEl.addEventListener('input', () => {
       window.clearTimeout(debounce);
-      debounce = window.setTimeout(() => (readState(), sync()), 250);
+      // Skip if the visitor has left Browse in the meantime, or sync() would rewrite their URL back here.
+      debounce = window.setTimeout(() => qEl.isConnected && (readState(), sync()), 250);
     });
     qEl.addEventListener('keydown', (e) => e.key === 'Enter' && e.preventDefault());
 

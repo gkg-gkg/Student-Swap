@@ -223,6 +223,8 @@ export default function render({ user } = {}) {
     };
     try {
       const list = await events.listEvents();
+      // The visitor may have left the homepage while events were loading.
+      if (!soonSlot.isConnected) return;
       weekSection.hidden = false;
       weekSlot.removeAttribute('aria-busy');
       mount(weekSlot, html`${weekTiles(list)}`);
@@ -266,6 +268,7 @@ export default function render({ user } = {}) {
       if (fast.length) mount(fastSlot, html`<div class="grid-cards">${fast.map((e) => eventCard(e))}</div>`);
       else fastSection.hidden = true;
     } catch {
+      if (!soonSlot.isConnected) return;
       const retry = () => {
         mount(soonSlot, html`${trackSkeleton}`);
         mount(fastSlot, gridSkeleton);

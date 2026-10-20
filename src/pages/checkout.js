@@ -81,7 +81,7 @@ export default async function render({ params, query }) {
           <div class="form-error" role="alert"></div>
           <div id="pay-host"></div>
           <button class="btn btn--primary btn--block" type="submit" id="pay-btn">Pay ${formatPence(order.totalPence, { exact: true })}</button>
-          <p class="small muted center">Secure payment. Protected by StudentSwap buyer protection.</p>
+          <p class="small muted center">By paying you agree to our <a class="link" href="#/terms">Terms</a>. Secure payment, protected by StudentSwap buyer protection.</p>
         </form>
       </section>
     </div>

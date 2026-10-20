@@ -18,10 +18,19 @@ await page.click('[data-clear-inline]');
 await page.waitForSelector('.grid-cards .ticket');
 check('clear filters restores list', (await page.locator('.grid-cards .ticket').count()) === total);
 
+// On phones the filters live in a bottom sheet behind the "Filters" button.
+const mobile = await page.isVisible('[data-filters-open]');
+if (mobile) await page.click('[data-filters-open]');
 await page.check('input[name=when][value=tonight]');
 await page.waitForFunction((t) => document.querySelectorAll('.grid-cards .ticket').length < t, total);
 check('tonight filter', true);
+check('active filter count shows', (await page.textContent('#filter-count')) === '1');
 await page.check('input[name=when][value=""]');
+if (mobile) {
+  await page.click('.filters__done');
+  await page.waitForFunction(() => !document.querySelector('#filters').classList.contains('is-open'));
+  check('"Show results" closes the filter sheet', true);
+}
 
 await page.selectOption('#sort', 'price_low');
 await page.waitForTimeout(600);

@@ -65,7 +65,7 @@ await page.click('#profile-form button[type=submit]');
 await page.waitForFunction(() => document.querySelector('.account-head h1')?.textContent === 'Alex Renamed');
 check('profile rename', true);
 await page.click('[data-signout]');
-await page.waitForSelector('.btn--signup');
+await page.waitForSelector('.header-actions a[href="#/sign-in"]');
 check('sign out', true);
 
 finish(errors);

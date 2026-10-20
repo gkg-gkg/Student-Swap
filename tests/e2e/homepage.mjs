@@ -34,8 +34,13 @@ check('universities listed in the hero', (await page.locator('.hero__unis li').c
 check('FAQ moved off the homepage', (await page.locator('#faq').count()) === 0);
 check('no numbered section labels (01 / ...)', !(await page.textContent('main')).match(/\b0\d\s*\/\s*[A-Z]/));
 check('no eyebrow labels on the homepage', (await page.locator('main .eyebrow').count()) === 0);
-await page.waitForSelector('.hero__cols .ticket');
-check('hero shows the vertical ticket carousel', (await page.locator('.hero__cols .vcol').count()) === 2);
+if (page.viewportSize().width >= 960) {
+  await page.waitForSelector('.hero__cols .ticket');
+  check('hero shows the vertical ticket carousel', (await page.locator('.hero__cols .vcol').count()) === 2);
+} else {
+  await page.waitForSelector('.hero__row .ticket');
+  check('hero shows the ticket marquee on phones', true);
+}
 check('no alternating section backgrounds', (await page.locator('main .section--deep').count()) === 0);
 check(
   'highlight only on key words',

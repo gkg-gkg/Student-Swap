@@ -78,8 +78,9 @@ export default async function render({ params, user }) {
           <div><h2>Tickets</h2><p class="muted">${e.ticketsAvailable ? `${e.ticketsAvailable} tickets from verified students. Prices include no markup, just a small fee shown at each step.` : "Nothing listed yet. Set an alert and we'll tell you the moment tickets appear."}</p></div>
           <div id="alert-slot">${alertButton()}</div>
         </div>
-        ${e.ticketsAvailable === 0 && listings.length === 0 ? html`<div class="state-box"><h3>No tickets yet</h3><p>Tickets listed by students will show up here.</p><a class="btn btn--primary btn--sm" href="#/sell/new">Got a spare? Sell it</a></div>` : ''}
+        ${e.ticketsAvailable === 0 && listings.length === 0 ? html`<div class="state-box"><h3>No tickets yet</h3><p>Tickets listed by students will show up here.</p><a class="btn btn--primary btn--sm" href="#/sell/new?event=${e.id}">Got a spare? Sell it</a></div>` : ''}
         <div class="tiers">${tierBlocks}</div>
+        ${listings.length ? html`<p class="small muted">Got a spare for this night? <a class="link" href="#/sell/new?event=${e.id}">Sell it here</a>, at or below the original price.</p>` : ''}
         <p class="notice">Every ticket is covered by buyer protection: your money is held until after the event, and you can report a problem before the payout date.</p>
       </section>
       <aside class="event-side card" aria-label="Event details">

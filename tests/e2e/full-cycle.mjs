@@ -9,7 +9,9 @@ await page.waitForLoadState('networkidle');
 
 const db = () => page.evaluate(() => JSON.parse(localStorage.getItem('ss.mockdb')));
 const as = async (email) => {
+  // Drop the session and reload so the app's in-memory user matches (as a real sign-out would).
   await page.evaluate(() => localStorage.removeItem('ss.session'));
+  await page.reload();
   await signIn(page, email);
 };
 const userEmail = async (id) => (await db()).users.find((u) => u.id === id).email;

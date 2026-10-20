@@ -7,7 +7,7 @@ import { universityForEmail } from '../lib/university.js';
 import { values, setFieldError, clearFieldErrors, setFormError, focusFirstError, busy } from '../lib/forms.js';
 import { field, checkbox, stepper } from '../components/ui.js';
 import { toast } from '../components/toast.js';
-import { navigate } from '../router.js';
+import { navigate, safeNext } from '../router.js';
 
 const STEPS = ['University email', 'Verify'];
 const TONES = /** @type {const} */ (['blue', 'coral', 'amber', 'mint', 'night']);
@@ -63,7 +63,7 @@ export default function render({ query, user }) {
         ageConfirmed: state.age,
       });
       toast('Welcome to StudentSwap!');
-      navigate(query.get('next') ?? '/browse');
+      navigate(safeNext(query.get('next')));
     }
 
     function view() {
