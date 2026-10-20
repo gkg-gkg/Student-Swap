@@ -38,8 +38,7 @@ if (page.viewportSize().width >= 960) {
   await page.waitForSelector('.hero__cols .ticket');
   check('hero shows the vertical ticket carousel', (await page.locator('.hero__cols .vcol').count()) === 2);
 } else {
-  await page.waitForSelector('.hero__row .ticket');
-  check('hero shows the ticket marquee on phones', true);
+  check('no ticket marquee in the hero on phones', (await page.locator('.hero .marquee').count()) === 0);
 }
 check('no alternating section backgrounds', (await page.locator('main .section--deep').count()) === 0);
 check(

@@ -46,11 +46,36 @@
 .hero h1 .line {
   display: block;
 }
+/* phones: one word per line (Swap / tickets. / Not / scams.) so the title can be much bigger */
+@media (max-width: 959px) {
+  .hero h1 {
+    font-size: min(19vw, 6.2rem);
+  }
+  .hero h1 .line--phone {
+    display: block;
+  }
+}
 .hero__sub {
   max-width: 46ch;
-  margin-top: 18px;
-  font-size: 1.02rem;
+  margin-top: 14px;
+  font-size: 0.94rem;
   color: var(--ink-mute);
+}
+/* mobile shows the short blurb; desktop has room for the full one */
+.hero__sub--long {
+  display: none;
+}
+@media (min-width: 960px) {
+  .hero__sub {
+    margin-top: 18px;
+    font-size: 1.02rem;
+  }
+  .hero__sub--long {
+    display: block;
+  }
+  .hero__sub--short {
+    display: none;
+  }
 }
 .hero__cta {
   display: flex;
@@ -87,14 +112,6 @@
   color: var(--blue-deep);
   text-decoration: underline;
 }
-/* mobile: one horizontal row under the text */
-.hero__row {
-  margin: 26px calc(var(--gutter) * -1) 0;
-  --marquee-speed: 40s;
-}
-.hero__row .ticket {
-  width: 224px;
-}
 .hero__cols {
   display: none;
 }
@@ -105,9 +122,6 @@
   .hero__grid {
     grid-template-columns: 1.15fr 0.85fr;
     gap: 24px;
-  }
-  .hero__row {
-    display: none;
   }
   /* desktop: two tilted vertical columns drifting in opposite directions */
   .hero__cols {

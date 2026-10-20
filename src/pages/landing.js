@@ -67,7 +67,7 @@ const weekTiles = (list) => {
   });
 };
 
-/** Arrow buttons scroll the track by one visible page and disable at either end. @param {HTMLElement} root */
+/** Arrow buttons scroll the track by whole cards (as many as fit) and disable at either end. @param {HTMLElement} root */
 const wireCarousel = (root) => {
   const track = /** @type {HTMLElement} */ (root.querySelector('.carousel__track'));
   const prev = /** @type {HTMLButtonElement} */ (root.querySelector('.carousel__btn--prev'));
@@ -76,8 +76,15 @@ const wireCarousel = (root) => {
     prev.disabled = track.scrollLeft <= 2;
     next.disabled = track.scrollLeft + track.clientWidth >= track.scrollWidth - 2;
   };
-  prev.onclick = () => track.scrollBy({ left: -track.clientWidth, behavior: 'smooth' });
-  next.onclick = () => track.scrollBy({ left: track.clientWidth, behavior: 'smooth' });
+  // Step by card width + gap rather than the track width, so each click lands exactly on a card edge.
+  const step = () => {
+    const card = /** @type {HTMLElement | null} */ (track.firstElementChild);
+    if (!card) return track.clientWidth;
+    const width = card.offsetWidth + parseFloat(getComputedStyle(track).columnGap || '0');
+    return Math.max(1, Math.floor((track.clientWidth + 1) / width)) * width;
+  };
+  prev.onclick = () => track.scrollBy({ left: -step(), behavior: 'smooth' });
+  next.onclick = () => track.scrollBy({ left: step(), behavior: 'smooth' });
   track.onscroll = update;
   update();
 };
@@ -109,10 +116,11 @@ export default function render({ user } = {}) {
       <div class="container hero__grid">
         <div class="hero__text">
           <h1>
-            <span class="line">Swap tickets.</span>
+            <span class="line">Swap <span class="line--phone">tickets.</span></span>
             <span class="line">Not <span class="mark">scams.</span></span>
           </h1>
-          <p class="hero__sub">Didn’t get a ticket? StudentSwap is the safe way to buy and sell event tickets with other students. No group-chat scams, no screenshots sold five times, no haggling. Every seller is verified, every ticket is checked, and your money’s protected until you’re through the door!</p>
+          <p class="hero__sub hero__sub--long">Didn’t get a ticket? StudentSwap is the safe way to buy and sell event tickets with other students. No group-chat scams, no screenshots sold five times, no haggling. Every seller is verified, every ticket is checked, and your money’s protected until you’re through the door!</p>
+          <p class="hero__sub hero__sub--short">Buy and sell event tickets with verified students. Your money’s protected until you’re through the door.</p>
           <div class="hero__cta">
             <a class="btn btn--primary" href="#/browse">Buy tickets</a>
             <a class="btn btn--secondary" href="#/sell">Sell tickets</a>
@@ -121,9 +129,7 @@ export default function render({ user } = {}) {
             ${unis.map((u) => html`<li><a href="#/browse?uni=${u.id}">${u.short}</a></li>`)}
           </ul>
         </div>
-        <div class="hero__art" id="hero-art">
-          <div class="hero__row marquee-status skeleton" aria-hidden="true"></div>
-        </div>
+        <div class="hero__art" id="hero-art"></div>
       </div>
     </section>
 
@@ -244,11 +250,7 @@ export default function render({ user } = {}) {
       }
 
       const decorative = list.map((e) => eventCard(e, { link: false }));
-      mount(
-        heroArt,
-        html`<div class="hero__row marquee" aria-hidden="true"><div class="marquee__track"><div class="marquee__group">${decorative}</div><div class="marquee__group">${decorative}</div></div></div>
-          ${heroColumns(decorative)}`,
-      );
+      mount(heroArt, heroColumns(decorative));
 
       // On soon near you: the 8 soonest events, the signed-in student's own uni/city first.
       const near = (/** @type {(typeof list)[number]} */ e) =>
