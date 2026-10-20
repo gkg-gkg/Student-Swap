@@ -85,7 +85,7 @@ async function overview() {
     view: html`<div class="stack stack--lg">
       <div class="stats">${stat('Users', totals.users)}${stat('Active listings', totals.activeListings)}${stat('Awaiting review', totals.awaitingReview)}${stat('Open reports', totals.openReports)}</div>
       <section aria-labelledby="bu"><h2 id="bu" class="h3" style="margin-bottom:12px">By university</h2>
-        <div class="table-wrap"><table class="table"><thead><tr><th scope="col">University</th><th scope="col" class="num">Users</th><th scope="col" class="num">Active listings</th><th scope="col" class="num">Sales</th><th scope="col" class="num">Volume</th></tr></thead>
+        <div class="table-wrap" tabindex="0" role="region" aria-labelledby="bu"><table class="table"><thead><tr><th scope="col">University</th><th scope="col" class="num">Users</th><th scope="col" class="num">Active listings</th><th scope="col" class="num">Sales</th><th scope="col" class="num">Volume</th></tr></thead>
           <tbody>${rows.map((/** @type {any} */ r) => html`<tr><th scope="row">${r.name}</th><td class="num">${r.users}</td><td class="num">${r.activeListings}</td><td class="num">${r.ordersCount}</td><td class="num">${formatPence(r.volumePence, { exact: true })}</td></tr>`)}</tbody>
           <tfoot><tr><th scope="row">Total</th><td class="num">${totals.users}</td><td class="num">${totals.activeListings}</td><td class="num">${rows.reduce((/** @type {number} */ n, /** @type {any} */ r) => n + r.ordersCount, 0)}</td><td class="num">${formatPence(totals.volumePence, { exact: true })}</td></tr></tfoot></table></div>
       </section>

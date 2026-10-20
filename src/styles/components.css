@@ -165,12 +165,17 @@ a.ticket:hover {
 }
 .ticket__art {
   position: relative;
-  height: 112px;
+  height: 92px;
   padding: 10px;
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
   overflow: hidden;
+}
+@media (min-width: 640px) {
+  .ticket__art {
+    height: 112px;
+  }
 }
 /* Decorative placeholder art: glows + stripes, no imagery needed */
 .ticket__art::before,
@@ -333,9 +338,9 @@ a.chip:hover {
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 24px 4px;
+  padding: 18px 4px;
   font-weight: 700;
-  font-size: 1.25rem;
+  font-size: 1.05rem;
   letter-spacing: -0.02em;
   cursor: pointer;
   list-style: none;
@@ -351,11 +356,20 @@ a.chip:hover {
   font-weight: 400;
   line-height: 1;
 }
+@media (min-width: 768px) {
+  .accordion summary {
+    padding: 24px 4px;
+    font-size: 1.25rem;
+  }
+  .accordion .accordion__body {
+    padding-bottom: 24px;
+  }
+}
 .accordion details[open] summary::after {
   content: '\2212';
 }
 .accordion .accordion__body {
-  padding: 0 4px 24px;
+  padding: 0 4px 18px;
   max-width: 62ch;
   color: var(--ink-mute);
 }
@@ -376,7 +390,12 @@ a.chip:hover {
   height: 100%;
   display: flex;
   align-items: center;
-  gap: 24px;
+  gap: 12px;
+}
+@media (min-width: 768px) {
+  .site-header .container {
+    gap: 24px;
+  }
 }
 .logo {
   display: inline-flex;
@@ -388,6 +407,7 @@ a.chip:hover {
   text-decoration: none;
 }
 .logo__mark {
+  flex: none;
   width: 32px;
   height: 32px;
 }
@@ -411,8 +431,14 @@ a.chip:hover {
   border-color: #334155;
   color: #93c5fd;
 }
-@media (max-width: 359px) {
+@media (max-width: 379px) {
   .logo__region {
+    display: none;
+  }
+}
+/* Focus pages (checkout, sign-in) put a button beside the logo: drop the region badge to make room */
+@media (max-width: 479px) {
+  .site-header .container:has(.right) .logo__region {
     display: none;
   }
 }
