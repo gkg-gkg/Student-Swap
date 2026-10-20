@@ -1,0 +1,61 @@
+/* Design tokens. CIRQLE foundation + "Afterglow" accents. Light only for now:
+   every colour is a variable, so a dark theme can override these later. */
+:root {
+  /* Surfaces */
+  --paper: #ffffff;
+  --paper-deep: #f5f7fa;
+  --line: #e6eaf0;
+  /* Text */
+  --ink: #0f172a;
+  --ink-soft: #64748b; /* AA on white only; use --ink-mute on tinted surfaces */
+  --ink-mute: #4b5a70; /* AA on paper-deep / blue-tint / rose-tint */
+  /* CIRQLE blues */
+  --neon: #38b6ff;
+  --neon-soft: #66d4ff;
+  --blue: #0072d6;
+  --blue-deep: #005cb0;
+  --blue-tint: #ecf6fb;
+  /* Afterglow accents (decorative fills; use -deep for text) */
+  --coral: #ff5a6e;
+  --coral-deep: #c81e3a;
+  --amber: #ffb020;
+  --rose-tint: #fff0f2;
+  --mint: #22d3a6;
+  --mint-tint: #e6faf4;
+  /* Status */
+  --red: #dc2626;
+  --green-deep: #0a7a5a;
+
+  /* Shape */
+  --radius-card: 8px;
+  --radius-chip: 6px;
+  --radius-btn: 8px;
+  --radius-pill: 999px;
+
+  /* Shadows */
+  --shadow-soft: 0 1px 2px rgb(15 23 42 / 0.05), 0 4px 12px rgb(15 23 42 / 0.05);
+  --shadow-lift: 0 2px 4px rgb(15 23 42 / 0.05), 0 10px 24px rgb(15 23 42 / 0.1);
+  --shadow-glow: 0 4px 14px rgb(0 114 214 / 0.28);
+  --shadow-sticker: 3px 3px 0 var(--ink);
+
+  /* Motion */
+  --ease: cubic-bezier(0.2, 0.7, 0.3, 1);
+
+  /* Type */
+  --font: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+  /* Layout */
+  --gutter: 20px;
+  --max: 1160px;
+  --header-h: 64px;
+  --bottomnav-h: 64px;
+
+  /* Gradients */
+  --grad-glow: linear-gradient(105deg, var(--amber) 0%, var(--coral) 100%);
+}
+
+@media (min-width: 768px) {
+  :root {
+    --gutter: 32px;
+  }
+}

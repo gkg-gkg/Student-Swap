@@ -1,0 +1,14 @@
+{
+  "name": "studentswap-ai-reference",
+  "private": true,
+  "type": "module",
+  "description": "Reference AWS Lambda handlers for StudentSwap's Claude-powered ticket features. Not part of the static site.",
+  "scripts": {
+    "test": "node --test"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "latest",
+    "@aws-sdk/client-s3": "^3.600.0",
+    "zod": "^4.6.7"
+  }
+}

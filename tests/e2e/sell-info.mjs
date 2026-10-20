@@ -1,0 +1,24 @@
+import { launch, go, signIn, check, finish } from './harness.mjs';
+const { browser, page, errors } = await launch();
+await go(page, '/');
+await page.evaluate(() => localStorage.clear());
+await go(page, '/sell');
+await page.waitForSelector('.sell-hero');
+check('sell page is public and lists features', (await page.locator('.bento__item').count()) >= 6);
+check('four numbered steps to cash', (await page.locator('.flow .flow__num').count()) === 4);
+check('payout example removed', (await page.locator('.sell-example').count()) === 0);
+await page.locator('.sell-hero a.btn').click();
+await page.waitForURL(/sign-in\?next=%2Fsell%2Fnew/);
+check('guest is sent to the sign-in page with a return path', true);
+await signIn(page);
+await go(page, '/sell');
+await page.locator('.sell-hero a.btn').click();
+await page.waitForSelector('#wizard h1');
+check('signed-in user goes straight to the wizard', page.url().includes('/sell/new'));
+// header link goes to the info page
+await go(page, '/');
+await page.click('.nav-desktop a:has-text("Sell Tickets")');
+await page.waitForSelector('.sell-hero');
+check('nav "Sell Tickets" opens the info page', true);
+finish(errors);
+await browser.close();

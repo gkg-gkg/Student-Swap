@@ -1,0 +1,625 @@
+/* ---------- Buttons ---------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 0 24px;
+  border: 2px solid transparent;
+  border-radius: var(--radius-btn);
+  font-weight: 700;
+  font-size: 1rem;
+  text-decoration: none;
+  white-space: nowrap;
+  transition:
+    transform 0.2s var(--ease),
+    box-shadow 0.2s var(--ease),
+    background 0.2s var(--ease);
+}
+.btn:active {
+  transform: translateY(1px) scale(0.98);
+}
+.btn--primary {
+  background: var(--blue);
+  color: #fff;
+  box-shadow: var(--shadow-glow);
+}
+.btn--primary:hover {
+  background: var(--blue-deep);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 28px rgb(0 114 214 / 0.42);
+}
+.btn--secondary {
+  background: var(--paper);
+  color: var(--ink);
+  border-color: var(--ink);
+}
+.btn--secondary:hover {
+  background: var(--ink);
+  color: #fff;
+}
+.btn--glow {
+  background: var(--grad-glow);
+  color: var(--ink);
+  box-shadow: var(--shadow-sticker);
+  border-color: var(--ink);
+}
+.btn--glow:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 5px 5px 0 var(--ink);
+}
+.btn--ghost {
+  min-height: 40px;
+  padding: 0 14px;
+  background: transparent;
+  color: var(--ink);
+}
+.btn--ghost:hover {
+  background: var(--paper-deep);
+}
+.btn--sm {
+  min-height: 40px;
+  padding: 0 18px;
+  font-size: 0.9rem;
+}
+.link-arrow {
+  font-weight: 700;
+  text-decoration: none;
+  color: var(--blue-deep);
+}
+.link-arrow::after {
+  content: ' →';
+  display: inline-block;
+  transition: transform 0.2s var(--ease);
+}
+.link-arrow:hover::after {
+  transform: translateX(4px);
+}
+
+/* ---------- Badges & stickers ---------- */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: var(--radius-chip);
+  font-size: 0.75rem;
+  font-weight: 700;
+  background: var(--blue-tint);
+  color: var(--blue-deep);
+}
+.badge--hot {
+  background: var(--rose-tint);
+  color: var(--coral-deep);
+}
+.badge--ok {
+  background: var(--mint-tint);
+  color: var(--green-deep);
+}
+.badge__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+  animation: pulse 1.8s var(--ease) infinite;
+}
+@keyframes pulse {
+  50% {
+    transform: scale(1.5);
+    opacity: 0.5;
+  }
+}
+/* Wristband-style sticker: ink outline, hard shadow, slight tilt */
+.sticker {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border: 2px solid var(--ink);
+  border-radius: var(--radius-chip);
+  background: var(--amber);
+  color: var(--ink);
+  font-size: 0.78rem;
+  font-weight: 800;
+  box-shadow: 2px 2px 0 var(--ink);
+  transform: none; /* straight, never tilted */
+}
+.sticker--mint {
+  background: var(--mint);
+}
+.sticker--paper {
+  background: var(--paper);
+}
+.sticker--coral {
+  background: var(--coral);
+}
+
+/* ---------- Ticket card (marquee + browse) ---------- */
+/* Stickers on the deal tiles stay straight (tilt is reserved for a few hero details). */
+.ticket__art .sticker {
+  transform: none;
+  border-width: 1px;
+  box-shadow: none;
+  padding: 3px 10px;
+}
+.ticket {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 248px;
+  flex: none;
+  overflow: hidden;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-soft);
+  text-decoration: none;
+  transition:
+    transform 0.25s var(--ease),
+    box-shadow 0.25s var(--ease);
+}
+a.ticket:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lift);
+}
+.ticket__art {
+  position: relative;
+  height: 112px;
+  padding: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  overflow: hidden;
+}
+/* Decorative placeholder art: glows + stripes, no imagery needed */
+.ticket__art::before,
+.ticket__art::after {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+}
+.ticket__art::before {
+  width: 140px;
+  height: 140px;
+  right: -40px;
+  bottom: -70px;
+  background: rgb(255 255 255 / 0.35);
+}
+.ticket__art::after {
+  width: 70px;
+  height: 70px;
+  left: 30%;
+  bottom: -30px;
+  background: rgb(15 23 42 / 0.12);
+}
+.art--coral {
+  background: linear-gradient(135deg, #ff8a6e, var(--coral));
+}
+.art--blue {
+  background: linear-gradient(135deg, var(--neon-soft), var(--blue));
+}
+.art--amber {
+  background: linear-gradient(135deg, #ffd36a, var(--amber) 55%, #ff8a3d);
+}
+.art--mint {
+  background: linear-gradient(135deg, #8cf0d6, var(--mint));
+}
+.art--night {
+  background: linear-gradient(135deg, #1e3a8a, #0f172a);
+}
+.ticket__art > * {
+  position: relative;
+  z-index: 1;
+}
+/* Placeholder imagery is one neutral grey for now (less noise). Remove this block to bring the tone colours back. */
+.ticket__art[class*='art--'],
+.event-hero[class*='art--'] {
+  background: linear-gradient(135deg, #e4e7ec, #c9cfd8);
+}
+/* perforation notches at the tear line */
+.ticket__body {
+  position: relative;
+  padding: 16px 14px 14px;
+}
+.ticket__title {
+  font-size: 1.02rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  margin-bottom: 4px;
+}
+.ticket__meta {
+  font-size: 0.84rem;
+  color: var(--ink-soft);
+}
+.ticket__price-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-top: 12px;
+}
+.ticket__price {
+  font-size: 1.35rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+.ticket__face {
+  font-size: 0.8rem;
+  color: var(--ink-soft);
+}
+.ticket__left {
+  margin-left: auto;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+/* ---------- Marquee ---------- */
+.marquee {
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
+}
+.marquee__track {
+  display: flex;
+  width: max-content;
+  animation: marquee-x var(--marquee-speed, 48s) linear infinite;
+}
+.marquee:hover .marquee__track,
+.marquee:focus-within .marquee__track {
+  animation-play-state: paused;
+}
+.marquee__group {
+  display: flex;
+  gap: 16px;
+  padding: 14px 16px 22px 0;
+}
+@keyframes marquee-x {
+  to {
+    transform: translateX(-50%);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .marquee {
+    overflow-x: auto;
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+  .marquee__track {
+    animation: none;
+  }
+  .marquee__group[aria-hidden='true'] {
+    display: none;
+  }
+}
+
+/* ---------- Chips ---------- */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 0 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-chip);
+  background: var(--paper);
+  font-weight: 600;
+  font-size: 0.92rem;
+  text-decoration: none;
+  transition:
+    background 0.2s var(--ease),
+    border-color 0.2s var(--ease),
+    transform 0.2s var(--ease);
+}
+a.chip:hover {
+  border-color: var(--blue);
+  background: var(--blue-tint);
+  transform: translateY(-2px);
+}
+
+/* ---------- Accordion (native <details>) ---------- */
+.accordion {
+  border-top: 1px solid var(--ink);
+}
+.accordion details {
+  border-bottom: 1px solid var(--line);
+}
+.accordion details:last-child {
+  border-bottom: 1px solid var(--ink);
+}
+.accordion summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 24px 4px;
+  font-weight: 700;
+  font-size: 1.25rem;
+  letter-spacing: -0.02em;
+  cursor: pointer;
+  list-style: none;
+}
+.accordion summary::-webkit-details-marker {
+  display: none;
+}
+.accordion summary::after {
+  content: '+';
+  flex: none;
+  color: var(--blue-deep);
+  font-size: 1.6rem;
+  font-weight: 400;
+  line-height: 1;
+}
+.accordion details[open] summary::after {
+  content: '\2212';
+}
+.accordion .accordion__body {
+  padding: 0 4px 24px;
+  max-width: 62ch;
+  color: var(--ink-mute);
+}
+
+/* ---------- Header ---------- */
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  height: var(--header-h);
+  background: rgb(255 255 255 / 0.9);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--ink);
+}
+.site-header .container {
+  position: relative;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+.logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 800;
+  font-size: 1.2rem;
+  letter-spacing: -0.04em;
+  text-decoration: none;
+}
+.logo__mark {
+  width: 32px;
+  height: 32px;
+}
+.logo b {
+  color: var(--blue);
+}
+.logo__region {
+  margin-left: 2px;
+  padding: 2px 9px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-pill);
+  background: var(--blue-tint);
+  color: var(--blue-deep);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.site-footer .logo__region {
+  background: transparent;
+  border-color: #334155;
+  color: #93c5fd;
+}
+@media (max-width: 359px) {
+  .logo__region {
+    display: none;
+  }
+}
+.nav-desktop {
+  display: none;
+  gap: 4px;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+.nav-desktop a {
+  padding: 8px 14px;
+  border-radius: var(--radius-chip);
+  font-weight: 600;
+  font-size: 0.95rem;
+  text-decoration: none;
+  color: var(--ink-mute);
+}
+.nav-desktop a:hover,
+.nav-desktop a[aria-current='page'] {
+  background: var(--paper-deep);
+  color: var(--ink);
+}
+.header-actions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.header-actions .btn--signup {
+  display: none;
+}
+@media (min-width: 768px) {
+  .nav-desktop {
+    display: flex;
+  }
+  .header-actions .btn--signup {
+    display: inline-flex;
+  }
+}
+
+/* ---------- Bottom nav (mobile) ---------- */
+.bottom-nav {
+  position: fixed;
+  inset: auto 0 0 0;
+  z-index: 60;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  height: calc(var(--bottomnav-h) + env(safe-area-inset-bottom));
+  padding-bottom: env(safe-area-inset-bottom);
+  background: rgb(255 255 255 / 0.96);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  border-top: 1px solid var(--line);
+}
+.bottom-nav a {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-decoration: none;
+  color: var(--ink-mute);
+}
+.bottom-nav a[aria-current='page'] {
+  color: var(--blue-deep);
+}
+.bottom-nav svg {
+  width: 22px;
+  height: 22px;
+}
+.bottom-nav .bottom-nav__sell span.plus {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  margin-top: -22px;
+  border-radius: 50%;
+  background: var(--grad-glow);
+  border: 2px solid var(--ink);
+  box-shadow: 2px 2px 0 var(--ink);
+  color: var(--ink);
+}
+@media (min-width: 768px) {
+  .bottom-nav {
+    display: none;
+  }
+}
+
+/* ---------- Footer ---------- */
+.site-footer {
+  padding: 56px 0 40px;
+  background: var(--ink);
+  color: #cbd5e1;
+  font-size: 0.92rem;
+}
+.site-footer a {
+  color: #e2e8f0;
+  text-decoration: none;
+}
+.site-footer a:hover {
+  text-decoration: underline;
+}
+.footer-grid {
+  display: grid;
+  gap: 32px;
+  grid-template-columns: 1fr 1fr;
+}
+.footer-grid h2 {
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #94a3b8;
+  margin-bottom: 12px;
+}
+.footer-grid ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+.footer-brand {
+  grid-column: 1 / -1;
+}
+.footer-brand .logo {
+  color: #fff;
+}
+.footer-brand p {
+  margin-top: 12px;
+  max-width: 34ch;
+}
+.footer-legal {
+  margin-top: 40px;
+  padding-top: 20px;
+  border-top: 1px solid #1e293b;
+  color: #94a3b8;
+  font-size: 0.82rem;
+}
+@media (min-width: 768px) {
+  .footer-grid {
+    grid-template-columns: 2fr 1fr 1fr 1fr;
+  }
+  .footer-brand {
+    grid-column: auto;
+  }
+}
+
+/* ---------- Skeleton / empty / error ---------- */
+.skeleton {
+  border-radius: var(--radius-card);
+  background: linear-gradient(90deg, var(--paper-deep) 25%, var(--line) 50%, var(--paper-deep) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s linear infinite;
+}
+@keyframes shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}
+.state-box {
+  display: grid;
+  place-items: center;
+  gap: 12px;
+  padding: 48px 20px;
+  text-align: center;
+  border: 2px dashed var(--line);
+  border-radius: var(--radius-card);
+  color: var(--ink-mute);
+}
+.state-box h3 {
+  color: var(--ink);
+  font-size: 1.2rem;
+}
+
+/* ---------- Header user chip ---------- */
+.header-user {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 12px 0 6px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-pill);
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-decoration: none;
+}
+.header-user:hover {
+  background: var(--paper-deep);
+}
+@media (max-width: 479px) {
+  .header-user__name {
+    display: none;
+  }
+  .header-user {
+    padding: 0 6px;
+  }
+}
+
+/* Prices and times line up in columns. Same font everywhere (Inter), just tabular figures. */
+.ticket__price,
+.ticket__left,
+.listing__amount,
+.listing__total {
+  font-variant-numeric: tabular-nums;
+}

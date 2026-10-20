@@ -1,0 +1,27 @@
+{
+  "name": "studentswap",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "StudentSwap frontend: vanilla ES modules, no build step.",
+  "scripts": {
+    "dev": "node scripts/serve.mjs",
+    "test": "node --test",
+    "typecheck": "tsc -p tsconfig.json",
+    "lint": "eslint src",
+    "format": "prettier --write .",
+    "build": "node scripts/build.mjs",
+    "write-env": "node scripts/write-env.mjs",
+    "bundle-amplify": "node scripts/bundle-amplify.mjs",
+    "test:e2e": "node tests/e2e/run-all.mjs"
+  },
+  "devDependencies": {
+    "aws-amplify": "^6.22.2",
+    "axe-core": "^4.14.0",
+    "esbuild": "^0.28.2",
+    "eslint": "^9.0.0",
+    "playwright-core": "^1.64.1",
+    "prettier": "^3.3.0",
+    "typescript": "^5.5.0"
+  }
+}

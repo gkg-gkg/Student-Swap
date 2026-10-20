@@ -1,0 +1,5 @@
+singleQuote: true
+printWidth: 120
+trailingComma: all
+# Leave html`...` templates exactly as written; reformatting can change whitespace between inline elements.
+embeddedLanguageFormatting: 'off'

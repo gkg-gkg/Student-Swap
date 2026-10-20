@@ -1,0 +1,17 @@
+# AWS Amplify Hosting build spec. Set the environment variables listed in scripts/write-env.mjs in the Amplify console.
+version: 1
+frontend:
+  phases:
+    preBuild:
+      commands:
+        - npm ci
+    build:
+      commands:
+        - npm run build
+  artifacts:
+    baseDirectory: dist
+    files:
+      - '**/*'
+  cache:
+    paths:
+      - node_modules/**/*
