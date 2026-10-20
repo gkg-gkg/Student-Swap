@@ -120,7 +120,7 @@ export default function render({ user } = {}) {
             <span class="line">Not <span class="mark">scams.</span></span>
           </h1>
           <p class="hero__sub hero__sub--long">Didn’t get a ticket? StudentSwap is the safe way to buy and sell event tickets with other students. No group-chat scams, no screenshots sold five times, no haggling. Every seller is verified, every ticket is checked, and your money’s protected until you’re through the door!</p>
-          <p class="hero__sub hero__sub--short">Buy and sell event tickets with verified students. Your money’s protected until you’re through the door.</p>
+          <p class="hero__sub hero__sub--short">The safe way to buy and sell event tickets with verified students. No scams, no markups, and your money’s protected until you’re through the door.</p>
           <div class="hero__cta">
             <a class="btn btn--primary" href="#/browse">Buy tickets</a>
             <a class="btn btn--secondary" href="#/sell">Sell tickets</a>
