@@ -77,7 +77,7 @@ export default function render({ query, user }) {
             <p class="small" id="uni-match" aria-live="polite"></p>
             ${field({ id: 'password', label: 'Password', type: 'password', required: true, autocomplete: 'new-password', hint: 'At least 8 characters, with a letter and a number.' })}
             ${checkbox({ id: 'age', label: 'I confirm that I am 18 years old or over.', required: true })}
-            ${checkbox({ id: 'terms', label: html`I agree to the <a href="#/terms" target="_blank" rel="noopener">Terms</a> and <a href="#/privacy" target="_blank" rel="noopener">Privacy Policy</a> (draft).`, required: true })}
+            ${checkbox({ id: 'terms', label: html`I agree to the <a href="#/terms" target="_blank" rel="noopener">Terms</a> and <a href="#/privacy" target="_blank" rel="noopener">Privacy Policy</a>.`, required: true })}
             <button class="btn btn--primary btn--block" type="submit">Send my code</button>
           </form>
           <p class="auth__foot">Already have an account? <a href="#/sign-in">Sign in</a></p>`;
@@ -98,7 +98,7 @@ export default function render({ query, user }) {
         <form class="stack" novalidate data-form="age">
           <div class="form-error" role="alert"></div>
           ${checkbox({ id: 'age', label: 'I confirm that I am 18 years old or over.', required: true })}
-          ${checkbox({ id: 'terms', label: html`I agree to the <a href="#/terms" target="_blank" rel="noopener">Terms</a> and <a href="#/privacy" target="_blank" rel="noopener">Privacy Policy</a> (draft).`, required: true })}
+          ${checkbox({ id: 'terms', label: html`I agree to the <a href="#/terms" target="_blank" rel="noopener">Terms</a> and <a href="#/privacy" target="_blank" rel="noopener">Privacy Policy</a>.`, required: true })}
           <button class="btn btn--primary btn--block" type="submit">Continue</button>
         </form>`;
     }

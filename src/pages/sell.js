@@ -483,7 +483,7 @@ export default function render({ query }) {
             ${checkbox({ id: 'own', label: "I own these tickets and I'm allowed to resell them.", required: true })}
             ${checkbox({ id: 'valid', label: 'The tickets are genuine, valid for this event, and not listed anywhere else.', required: true })}
             ${checkbox({ id: 'price', label: 'My price is at or below face value.', required: true })}
-            ${checkbox({ id: 'rules', label: html`I accept the <a href="#/terms" target="_blank" rel="noopener">Seller Terms</a> (draft) and understand I'm paid ${pricing.payoutReleaseHoursAfterEvent}h after the event if no problem is reported.`, required: true })}
+            ${checkbox({ id: 'rules', label: html`I accept the <a href="#/terms" target="_blank" rel="noopener">Terms</a> and understand I'm paid ${pricing.payoutReleaseHoursAfterEvent}h after the event if no problem is reported.`, required: true })}
           </section>
           <div class="wizard__bar"><button class="btn btn--secondary" type="button" data-back>Back</button><button class="btn btn--primary" type="submit">Publish listing</button></div>
         </form>`;

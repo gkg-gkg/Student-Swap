@@ -2,6 +2,7 @@ import { html, mount } from '../lib/html.js';
 import { brand } from '../config/brand.js';
 import { pricing } from '../config/pricing.js';
 import { faqGroups } from '../data/faq.js';
+import { termsSections, privacySections } from '../data/legal.js';
 import { buyerTotal, sellerPayout, buyerFeeText, cardFeeText } from '../lib/fees.js';
 import { formatPence } from '../lib/money.js';
 import { poundsToPence } from '../features/make-offer.js';
@@ -110,7 +111,10 @@ const comparison = [
   ['If the ticket fails', "You're on your own", 'Report it and we review it for a refund'],
 ];
 
-const draftBanner = html`<p class="draft-banner">DRAFT TEMPLATE: placeholder text only. This must be replaced with wording reviewed by a qualified solicitor before launch. It is not legal advice.</p>`;
+/** Terms and Privacy body: numbered sections with a "last updated" line. @param {[string, any][]} sections */
+const legal = (sections) =>
+  html`<div class="prose"><p class="small">Last updated: ${brand.legal.lastUpdated}</p>
+    ${sections.map(([h, body]) => html`<h2>${h}</h2>${body}`)}</div>`;
 
 /** @param {string} title @param {string} sub @param {any} body */
 const shell = (title, sub, body) =>
@@ -325,25 +329,16 @@ const pages =
     }),
 
     terms: () => ({
-      title: 'Terms (draft) | StudentSwap',
-      description: 'Draft terms of use template.',
-      view: shell(
-        'Terms of use',
-        'Draft template',
-        html`<div class="prose">${draftBanner}
-      ${['1. About StudentSwap', '2. Who can use the service', '3. Buying tickets', '4. Selling tickets and the original-price cap', '5. Fees and payments', '6. Payouts and the holding period', '7. Problems, reports and refunds', '8. Prohibited conduct', '9. Our responsibilities and limits', '10. Changes and contact'].map((h) => html`<h2>${h}</h2><p>[Placeholder: section text to be written and legally reviewed.]</p>`)}</div>`,
-      ),
+      title: 'Terms of use | StudentSwap',
+      description:
+        'The rules for buying and selling tickets on StudentSwap, including fees, payouts and buyer protection.',
+      view: shell('Terms of use', 'The rules for buying and selling on StudentSwap.', legal(termsSections)),
     }),
 
     privacy: () => ({
-      title: 'Privacy (draft) | StudentSwap',
-      description: 'Draft privacy policy template.',
-      view: shell(
-        'Privacy policy',
-        'Draft template',
-        html`<div class="prose">${draftBanner}
-      ${['1. Who we are', '2. What information we collect (including ticket files and emails you upload)', '3. How we use it (including automated reading and checking of tickets by an AI service)', '4. Who we share it with: payments provider (Stripe), AI provider (Anthropic), cloud hosting and email (AWS)', '5. How long we keep it', '6. Your rights', '7. Cookies and similar technologies', '8. Contact'].map((h) => html`<h2>${h}</h2><p>[Placeholder: section text to be written and legally reviewed.]</p>`)}</div>`,
-      ),
+      title: 'Privacy policy | StudentSwap',
+      description: 'What personal data StudentSwap collects, how it is used and shared, and your rights.',
+      view: shell('Privacy policy', 'What we collect, why, and the choices you have.', legal(privacySections)),
     }),
   });
 

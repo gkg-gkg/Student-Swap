@@ -726,15 +726,6 @@
   color: var(--blue-deep);
   font-weight: 600;
 }
-.draft-banner {
-  margin-bottom: 24px;
-  padding: 14px 16px;
-  border: 2px dashed var(--amber);
-  border-radius: var(--radius-card);
-  background: #fff9e8;
-  color: #6b4500;
-  font-weight: 600;
-}
 
 /* ---------- Confetti ---------- */
 .confetti {

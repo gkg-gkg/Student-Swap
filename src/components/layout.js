@@ -79,8 +79,8 @@ export function footer() {
         <div>
           <h2>Legal</h2>
           <ul>
-            <li><a href="#/terms">Terms (draft)</a></li>
-            <li><a href="#/privacy">Privacy (draft)</a></li>
+            <li><a href="#/terms">Terms</a></li>
+            <li><a href="#/privacy">Privacy</a></li>
           </ul>
         </div>
       </div>
