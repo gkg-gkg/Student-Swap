@@ -32,6 +32,15 @@
 .grid-cards .ticket {
   width: auto;
 }
+/* Buy tickets page: taller art band so more of the event artwork shows */
+.browse .ticket__art {
+  height: 132px;
+}
+@media (min-width: 640px) {
+  .browse .ticket__art {
+    height: 156px;
+  }
+}
 .skeleton--event {
   height: 250px;
 }
@@ -631,6 +640,15 @@
 .pick input:focus-visible + .pick__body {
   outline: 3px solid var(--neon);
   outline-offset: 2px;
+}
+.pick--disabled {
+  cursor: not-allowed;
+}
+.pick--disabled .pick__body {
+  opacity: 0.6;
+}
+.pick--disabled:hover .pick__body {
+  border-color: var(--line);
 }
 .qty {
   display: grid;
