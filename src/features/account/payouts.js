@@ -16,7 +16,7 @@ const connectCard = (status) => html`<section class="card card--flat connect" ar
   ${
     status === 'complete'
       ? html`<p class="muted">Your payout account is connected through Stripe. Released payouts go straight to your bank.</p>`
-      : html`<p class="muted">To get paid you'll connect a bank account with Stripe, our payments partner. It takes a few minutes and you only do it once. You can list tickets before you finish, but we can't release money until you do.</p>
+      : html`<p class="muted">To get paid you'll connect a bank account with Stripe, our payments partner. It takes a few minutes and you only do it once. You need to finish this before you can list a ticket.</p>
       <button class="btn btn--primary" type="button" data-connect>${status === 'pending' ? 'Continue setup' : 'Set up payouts'}</button>
       <p class="small muted">Placeholder: this will open Stripe's hosted Connect onboarding.</p>`
   }
@@ -44,7 +44,7 @@ export async function render() {
         <div class="row-card__main">
           <a class="row-card__title" href="#/orders/${p.orderId}">${p.event?.title ?? p.orderId}</a>
           <div class="muted small">${p.event ? eventLine(p.event) : ''}</div>
-          <div class="row"><strong>${formatPence(p.amountPence, { exact: true })}</strong> <span class="muted small">(sale ${formatPence(p.grossPence, { exact: true })} − fee ${formatPence(p.sellerFeePence, { exact: true })})</span> ${statusBadge('payout', p.status)}</div>
+          <div class="row"><strong>${formatPence(p.amountPence, { exact: true })}</strong> <span class="muted small">(sale ${formatPence(p.grossPence, { exact: true })} − card fee ${formatPence(p.cardFeePence, { exact: true })})</span> ${statusBadge('payout', p.status)}</div>
           <div class="small muted">${p.status === 'released' ? `Paid ${formatDateTime(p.releasedAt ?? p.releaseAt)}` : p.status === 'frozen' ? 'Paused while a report is reviewed' : `Releases ${formatDateTime(p.releaseAt)}`}</div>
         </div></article>`,
             )}</div>`

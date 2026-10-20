@@ -43,7 +43,7 @@ export function openOfferModal(listing, { onDone } = {}) {
                 label: `Offer (${listing.quantity} × ${formatPence(p, { exact: true })})`,
                 value: formatPence(price, { exact: true }),
               },
-              { label: 'Buyer fee (5%)', value: formatPence(buyerFee, { exact: true }) },
+              { label: 'Booking fee', value: formatPence(buyerFee, { exact: true }) },
               { label: 'You would pay', value: formatPence(total, { exact: true }), strong: true },
             ],
             'Offer total',

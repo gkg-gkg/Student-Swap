@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { validateListingPrice, maxPrice } from './pricing.js';
+import { validateListingPrice, maxPrice, listingWindow } from './pricing.js';
 
 test('price at face value is allowed', () => {
   assert.deepEqual(validateListingPrice(2000, 2000, 1), { ok: true });
@@ -29,4 +29,13 @@ test('multiplier is the single switch', () => {
 
 test('default config enforces a hard face-value cap', () => {
   assert.equal(validateListingPrice(2001, 2000).ok, false);
+});
+
+test('events can be listed from 85 days before they start, not earlier', () => {
+  const now = new Date('2026-01-01T12:00:00Z');
+  assert.equal(listingWindow('2026-03-01T22:00:00Z', now, 85).ok, true); // 59 days away
+  assert.equal(listingWindow('2026-03-27T11:00:00Z', now, 85).ok, true); // just inside 85 days
+  const far = listingWindow('2026-06-01T22:00:00Z', now, 85);
+  assert.equal(far.ok, false);
+  assert.equal(far.ok === false && far.opensAt.toISOString(), '2026-03-08T22:00:00.000Z');
 });

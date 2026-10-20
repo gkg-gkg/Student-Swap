@@ -149,13 +149,13 @@ export function payOrder(id, _input) {
         '#/browse',
       );
     }
-    const { sellerFee, payout } = sellerPayout(o.unitPence * o.quantity);
+    const { cardFee, payout } = sellerPayout(o.unitPence * o.quantity);
     db.payouts.push({
       id: nextId('payout'),
       orderId: o.id,
       sellerId: o.sellerId,
       grossPence: o.unitPence * o.quantity,
-      sellerFeePence: sellerFee,
+      cardFeePence: cardFee,
       amountPence: payout,
       status: 'held',
       releaseAt: o.payoutReleaseAt,

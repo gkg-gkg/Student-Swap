@@ -135,7 +135,7 @@
  * @property {string} orderId
  * @property {string} sellerId
  * @property {number} grossPence
- * @property {number} sellerFeePence
+ * @property {number} cardFeePence Stripe's card fee, paid from the sale
  * @property {number} amountPence what the seller receives
  * @property {PayoutStatusValue} status
  * @property {string} releaseAt

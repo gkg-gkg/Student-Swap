@@ -2,7 +2,7 @@ import { html, mount } from '../lib/html.js';
 import { brand } from '../config/brand.js';
 import { pricing } from '../config/pricing.js';
 import { faqGroups } from '../data/faq.js';
-import { buyerTotal, sellerPayout } from '../lib/fees.js';
+import { buyerTotal, sellerPayout, buyerFeeText, cardFeeText } from '../lib/fees.js';
 import { formatPence } from '../lib/money.js';
 import { poundsToPence } from '../features/make-offer.js';
 import { field, selectField, priceBreakdown, pageHead } from '../components/ui.js';
@@ -22,7 +22,7 @@ const journey = [
     'We read the barcode, look for duplicates and check the details match the event. Anything unclear goes to a person before it goes live.',
     'StudentSwap',
   ],
-  ['Paid and held', `You pay the price you saw plus a ${pricing.buyerFeeBps / 100}% fee. We hold the money.`, 'You'],
+  ['Paid and held', `You pay the price you saw plus a ${buyerFeeText()} booking fee. The money is held.`, 'You'],
   ['Delivered', 'Download the PDF, or accept the transfer in the ticketing app.', 'Seller'],
   [
     'After the event',
@@ -53,7 +53,7 @@ const faqs = [
   ],
   [
     'What fees are there?',
-    'Buyers pay a 5% fee on top of the ticket price and sellers pay a 5% fee on the sale price. Fees are shown before you commit.',
+    `Buyers pay a ${buyerFeeText()} booking fee on top of the ticket price. Selling is free: the only cost is Stripe's card fee (about ${cardFeeText()}), taken from the sale. Everything is shown before you commit.`,
   ],
   [
     'How do I get my ticket?',
@@ -132,7 +132,7 @@ const pages =
             <h2>Buying</h2>
             <ul class="path__list">
               <li>${icons.search}<div><strong>Find your night</strong><span>Search events and compare tickets from verified students.</span></div></li>
-              <li>${icons.lock}<div><strong>Pay safely</strong><span>You pay the listed price plus a ${pricing.buyerFeeBps / 100}% fee. We hold the money.</span></div></li>
+              <li>${icons.lock}<div><strong>Pay safely</strong><span>You pay the listed price plus a ${buyerFeeText()} booking fee. We hold the money.</span></div></li>
               <li>${icons.ticket}<div><strong>Get your ticket</strong><span>Download the PDF, or accept the transfer in the ticketing app.</span></div></li>
               <li>${icons.shield}<div><strong>Enjoy</strong><span>Something wrong? Report it before the payout date.</span></div></li>
             </ul>
@@ -142,7 +142,7 @@ const pages =
             <h2>Selling</h2>
             <ul class="path__list">
               <li>${icons.bolt}<div><strong>List in a minute</strong><span>Pick the event, upload the ticket or choose transfer, set a price at or below original.</span></div></li>
-              <li>${icons.cash}<div><strong>See your payout first</strong><span>Our ${pricing.sellerFeeBps / 100}% fee is shown before you publish.</span></div></li>
+              <li>${icons.cash}<div><strong>Free to sell</strong><span>No StudentSwap fee. Stripe's card fee (about ${cardFeeText()}) comes out of the sale, and you see your payout before you publish.</span></div></li>
               <li>${icons.chat}<div><strong>Sell</strong><span>Accept offers or wait for a buyer. Transfer if needed.</span></div></li>
               <li>${icons.scale}<div><strong>Get paid</strong><span>${pricing.payoutReleaseHoursAfterEvent}h after the event, if no problem is reported.</span></div></li>
             </ul>
@@ -215,20 +215,21 @@ const pages =
 
     fees: () => ({
       title: 'Fees | StudentSwap',
-      description: 'Simple, transparent fees. 5% for buyers and 5% for sellers, shown before you commit.',
+      description:
+        'Simple, transparent fees: a small booking fee for buyers, and selling is free. Always shown before you commit.',
       view: shell(
         'Simple fees',
         'No hidden costs. You always see the full price before you commit.',
         html`
       <div class="how-cols">
-        <div class="card stack"><h2>Buyers pay ${pricing.buyerFeeBps / 100}%</h2><p class="muted">A fee on top of the ticket price, shown from the first price you see and again at checkout.</p></div>
-        <div class="card stack"><h2>Sellers pay ${pricing.sellerFeeBps / 100}%</h2><p class="muted">Taken from the sale price when you're paid. Listing is free, and you see your exact payout before you publish.</p></div>
+        <div class="card stack"><h2>Buyers pay ${buyerFeeText()}</h2><p class="muted">A booking fee on top of the ticket price, shown from the first price you see and again at checkout.</p></div>
+        <div class="card stack"><h2>Selling is free</h2><p class="muted">StudentSwap takes nothing from sellers. The only cost is Stripe's card fee (about ${cardFeeText()} of the payment), taken from the sale. You see your payout before you publish.</p></div>
       </div>
       <section class="card stack" style="margin-top:24px" aria-labelledby="calc"><h2 id="calc">Try it</h2>
         ${field({ id: 'calc-price', label: 'Ticket price', prefix: '£', inputmode: 'decimal', value: '12.00', hint: 'Enter any price to see what each side pays.' })}
         <div class="how-cols"><div><h3 class="h3">Buyer pays</h3><div id="calc-buyer" aria-live="polite"></div></div><div><h3 class="h3">Seller receives</h3><div id="calc-seller" aria-live="polite"></div></div></div>
       </section>
-      <p class="muted" style="margin-top:20px;max-width:62ch">Payment processing is included in these fees. If a refund is approved after a report, the buyer is refunded in full. Fee rates are examples and may change, but never without showing you the final amount first.</p>`,
+      <p class="muted" style="margin-top:20px;max-width:62ch">Stripe's card fee depends on the buyer's card (it's a little higher for premium and non-UK cards), so seller payouts here are estimates. If a refund is approved after a report, the buyer is refunded in full. Fees may change, but never without showing you the final amount first.</p>`,
       ),
       onMount(root) {
         const input = /** @type {HTMLInputElement} */ (root.querySelector('#calc-price'));
@@ -247,7 +248,7 @@ const pages =
             b,
             priceBreakdown([
               { label: 'Ticket', value: formatPence(bt.price, { exact: true }) },
-              { label: 'Buyer fee', value: formatPence(bt.buyerFee, { exact: true }) },
+              { label: 'Booking fee', value: formatPence(bt.buyerFee, { exact: true }) },
               { label: 'Total', value: formatPence(bt.total, { exact: true }), strong: true },
             ]),
           );
@@ -255,7 +256,7 @@ const pages =
             s,
             priceBreakdown([
               { label: 'Sale price', value: formatPence(sp.price, { exact: true }) },
-              { label: 'Seller fee', value: `−${formatPence(sp.sellerFee, { exact: true })}` },
+              { label: 'Card processing (Stripe, est.)', value: `−${formatPence(sp.cardFee, { exact: true })}` },
               { label: 'You receive', value: formatPence(sp.payout, { exact: true }), strong: true },
             ]),
           );

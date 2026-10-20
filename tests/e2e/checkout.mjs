@@ -13,7 +13,7 @@ await page.click(`a[href="${href}"]`);
 await page.waitForSelector('#pay-form');
 const total = await page.textContent('#pay-btn');
 check('checkout shows total on pay button', /£\d/.test(total), total.trim());
-check('fee line is visible', (await page.textContent('.breakdown')).includes('Buyer fee'));
+check('fee line is visible', (await page.textContent('.breakdown')).includes('Booking fee'));
 check('hold timer ticking', /\d\d:\d\d/.test(await page.textContent('.hold .countdown')));
 
 // Validation + decline

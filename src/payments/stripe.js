@@ -1,5 +1,5 @@
 // Real PaymentProvider using Stripe. Needs: STRIPE_PUBLISHABLE_KEY (src/config/env.js) and the backend endpoints
-//   POST /payments/session        { orderId } -> { clientSecret }   (creates a PaymentIntent for the order total)
+//   POST /payments/session        { orderId } -> { clientSecret, stripeAccount }   (PaymentIntent on the seller's account)
 //   GET  /me/connect-status                   -> { status }
 //   POST /me/connect-link                     -> { url }
 // The backend is the source of truth: it marks the order paid from Stripe's `payment_intent.succeeded` webhook.
@@ -9,13 +9,13 @@ import { request } from '../api/http.js';
 
 /** @type {Promise<any> | null} */
 let stripeJs = null;
-/** Loads Stripe.js from Stripe's own domain (required for PCI scope; do not self-host it). */
-function loadStripe() {
+/** Loads Stripe.js from Stripe's own domain (required for PCI scope; do not self-host it). Resolves to the `Stripe` factory. */
+function loadStripeJs() {
   stripeJs ??= new Promise((resolve, reject) => {
-    if (/** @type {any} */ (window).Stripe) return resolve(/** @type {any} */ (window).Stripe(STRIPE_PUBLISHABLE_KEY));
+    if (/** @type {any} */ (window).Stripe) return resolve(/** @type {any} */ (window).Stripe);
     const s = document.createElement('script');
     s.src = 'https://js.stripe.com/v3/';
-    s.onload = () => resolve(/** @type {any} */ (window).Stripe(STRIPE_PUBLISHABLE_KEY));
+    s.onload = () => resolve(/** @type {any} */ (window).Stripe);
     s.onerror = () => reject(new Error('Could not load the payment form. Check your connection and try again.'));
     document.head.appendChild(s);
   });
@@ -26,10 +26,12 @@ function loadStripe() {
 export const stripePayments = {
   async mountPaymentForm(host, { orderId }) {
     if (!STRIPE_PUBLISHABLE_KEY) throw new Error('Payments are not configured yet.');
-    const [stripe, { clientSecret }] = await Promise.all([
-      loadStripe(),
+    const [Stripe, { clientSecret, stripeAccount }] = await Promise.all([
+      loadStripeJs(),
       request('/payments/session', { method: 'POST', body: { orderId } }),
     ]);
+    // The payment is made on the seller's Stripe account (Stripe takes its fee from them; we get the booking fee).
+    const stripe = Stripe(STRIPE_PUBLISHABLE_KEY, { stripeAccount });
     const elements = stripe.elements({
       clientSecret,
       appearance: {
@@ -57,5 +59,5 @@ export const stripePayments = {
     };
   },
   getConnectStatus: () => request('/me/connect-status'),
-  createOnboardingLink: () => request('/me/connect-link', { method: 'POST' }),
+  createOnboardingLink: ({ returnPath } = {}) => request('/me/connect-link', { method: 'POST', body: { returnPath } }),
 };

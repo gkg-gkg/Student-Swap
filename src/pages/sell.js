@@ -3,8 +3,9 @@ import { events, listings, ticketAi } from '../api/index.js';
 import { cities } from '../data/regions.js';
 import { formatPence } from '../lib/money.js';
 import { dayLabel, formatTime, formatDayLong } from '../lib/time.js';
-import { sellerPayout, buyerTotal } from '../lib/fees.js';
-import { validateListingPrice, maxPrice } from '../lib/pricing.js';
+import { sellerPayout, buyerTotal, buyerFeeText } from '../lib/fees.js';
+import { validateListingPrice, maxPrice, listingWindow } from '../lib/pricing.js';
+import { payments } from '../payments/provider.js';
 import { pricing } from '../config/pricing.js';
 import { features, ticketSafety } from '../config/features.js';
 import { USE_MOCKS } from '../config/env.js';
@@ -28,6 +29,7 @@ export default function render({ query }) {
     step: 0,
     events: /** @type {any[] | null} */ (null),
     eventId: query.get('event') ?? '',
+    payoutsReady: false,
     tierId: '',
     quantity: 1,
     delivery: /** @type {'pdf' | 'transfer' | ''} */ (''),
@@ -60,7 +62,12 @@ export default function render({ query }) {
     const load = async () => {
       mount(host, html`<div class="skeleton skeleton--card" aria-busy="true"></div>`);
       try {
-        s.events = await events.listEvents({ sort: 'soonest' });
+        const [list, connect] = await Promise.all([
+          events.listEvents({ sort: 'soonest' }),
+          payments.getConnectStatus(),
+        ]);
+        s.events = list;
+        s.payoutsReady = connect.status === 'complete';
         if (s.eventId && ev()) s.tierId = ev().tiers[0].id;
         draw();
       } catch {
@@ -70,6 +77,7 @@ export default function render({ query }) {
     };
 
     function draw() {
+      if (!s.payoutsReady) return payoutsGate();
       mount(
         host,
         s.result
@@ -79,6 +87,36 @@ export default function render({ query }) {
       wire();
       /** @type {HTMLElement | null} */ (host.querySelector('h1'))?.focus();
       window.scrollTo(0, 0);
+    }
+
+    /** Sellers connect a bank account with Stripe before their first listing, so they can always be paid. */
+    function payoutsGate() {
+      mount(
+        host,
+        html`<div class="stack stack--lg" style="max-width:560px">
+          <div><h1 tabindex="-1">Set up payouts first</h1>
+          <p class="muted">Before your first listing, connect your bank account with Stripe, our payments partner. It takes a few minutes and you only do it once. Then the money from every sale reaches you ${pricing.payoutReleaseHoursAfterEvent}h after the event.</p></div>
+          <div class="form-error" role="alert"></div>
+          <div><button class="btn btn--primary" type="button" data-connect>Set up payouts</button></div>
+        </div>`,
+      );
+      /** @type {HTMLElement | null} */ (host.querySelector('h1'))?.focus();
+      host.querySelector('[data-connect]')?.addEventListener('click', async (e) => {
+        const btn = /** @type {HTMLButtonElement} */ (e.currentTarget);
+        busy(btn, true, 'Opening Stripe…');
+        try {
+          const returnPath = `/sell/new${s.eventId ? `?event=${s.eventId}` : ''}`;
+          const { url } = await payments.createOnboardingLink({ returnPath });
+          if (/^https?:/.test(url)) return void location.assign(url); // real Stripe: comes back here when done
+          s.payoutsReady = (await payments.getConnectStatus()).status === 'complete';
+          toast('Payout account connected (demo)');
+          draw();
+        } catch {
+          busy(btn, false);
+          /** @type {HTMLElement} */ (host.querySelector('.form-error')).textContent =
+            "Couldn't open Stripe. Please try again.";
+        }
+      });
     }
 
     /** ---------- Step 1: event, tier, quantity ---------- */
@@ -103,7 +141,7 @@ export default function render({ query }) {
               : ''
           }
         </div>
-        ${bar({ next: !!e && !!s.tierId, back: false })}`;
+        ${bar({ next: !!e && !!s.tierId && listingWindow(e.startsAt).ok, back: false })}`;
     }
 
     /** @param {string} q */
@@ -112,7 +150,11 @@ export default function render({ query }) {
         `${e.title} ${e.venue}`.toLowerCase().includes(q.toLowerCase()),
       );
       if (!list.length) return html`<p class="muted">No events match "${q}".</p>`;
-      return html`${list.map((/** @type {any} */ e) => html`<label class="pick"><input type="radio" name="event" value="${e.id}" ${e.id === s.eventId ? raw('checked') : ''} /><span class="pick__body"><strong>${e.title}</strong><span class="muted small">${dayLabel(e.startsAt)} · ${formatTime(e.startsAt)} · ${e.venue}, ${cities.find((c) => c.id === e.cityId)?.name}</span></span></label>`)}`;
+      return html`${list.map((/** @type {any} */ e) => {
+        const lead = listingWindow(e.startsAt);
+        // Too far ahead to list yet (Stripe's 90-day hold limit): shown, but greyed out with the date it opens.
+        return html`<label class="pick ${lead.ok ? '' : 'pick--disabled'}"><input type="radio" name="event" value="${e.id}" ${e.id === s.eventId && lead.ok ? raw('checked') : ''} ${lead.ok ? '' : raw('disabled')} /><span class="pick__body"><strong>${e.title}</strong><span class="muted small">${dayLabel(e.startsAt)} · ${formatTime(e.startsAt)} · ${e.venue}, ${cities.find((c) => c.id === e.cityId)?.name}</span>${lead.ok ? '' : html`<span class="small">Listing opens ${formatDayLong(lead.opensAt.toISOString())}</span>`}</span></label>`;
+      })}`;
     }
 
     /** ---------- AI autofill ---------- */
@@ -394,26 +436,26 @@ export default function render({ query }) {
       if (Number.isNaN(p)) return html`<p class="muted">Enter a price to see what you'll receive.</p>`;
       const v = validateListingPrice(p, tier().faceValuePence);
       if (!v.ok) return html`<p class="muted">Enter a valid price to see your payout.</p>`;
-      const { sellerFee, payout } = sellerPayout(p * q);
+      const { cardFee, payout } = sellerPayout(p * q);
       const { total } = buyerTotal(p * q);
       return html`${priceBreakdown(
         [
           { label: `${q} × ${formatPence(p, { exact: true })}`, value: formatPence(p * q, { exact: true }) },
           {
-            label: `Seller fee (${pricing.sellerFeeBps / 100}%)`,
-            value: `−${formatPence(sellerFee, { exact: true })}`,
+            label: 'Card processing (Stripe, est.)',
+            value: `−${formatPence(cardFee, { exact: true })}`,
           },
           { label: 'You receive', value: formatPence(payout, { exact: true }), strong: true },
         ],
         'Payout preview',
-      )}<p class="small muted">Buyers pay ${formatPence(total, { exact: true })} (your price plus a ${pricing.buyerFeeBps / 100}% buyer fee). You're paid ${pricing.payoutReleaseHoursAfterEvent}h after the event if no problem is reported.</p>`;
+      )}<p class="small muted">Buyers pay ${formatPence(total, { exact: true })} (your price plus a ${buyerFeeText()} booking fee). Selling is free: the only cost is Stripe's card fee, which depends on the buyer's card. You're paid ${pricing.payoutReleaseHoursAfterEvent}h after the event if no problem is reported.</p>`;
     }
 
     /** ---------- Step 4: review ---------- */
     function stepReview() {
       const e = ev();
       const p = pricePence();
-      const { sellerFee, payout } = sellerPayout(p * s.quantity);
+      const { cardFee, payout } = sellerPayout(p * s.quantity);
       return html`<h1 tabindex="-1">Review and publish</h1><p class="muted">Check everything, then confirm the declarations.</p>
         <form id="review-form" class="stack stack--lg" novalidate>
           <div class="form-error" role="alert"></div>
@@ -428,8 +470,8 @@ export default function render({ query }) {
                   value: formatPence(p * s.quantity, { exact: true }),
                 },
                 {
-                  label: `Seller fee (${pricing.sellerFeeBps / 100}%)`,
-                  value: `−${formatPence(sellerFee, { exact: true })}`,
+                  label: 'Card processing (Stripe, est.)',
+                  value: `−${formatPence(cardFee, { exact: true })}`,
                 },
                 { label: 'You receive', value: formatPence(payout, { exact: true }), strong: true },
               ],

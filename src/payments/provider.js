@@ -29,8 +29,8 @@ export class PaymentFormError extends Error {
  *   Real: POST /payments/session -> PaymentIntent client secret, then mount Stripe's Payment Element into `host`.
  * @property {() => Promise<{ status: 'not_started' | 'pending' | 'complete' }>} getConnectStatus
  *   Real: GET /me/connect-status (the backend reads the Stripe account's requirements).
- * @property {() => Promise<{ url: string }>} createOnboardingLink
- *   Real: POST /me/connect-link -> Stripe Account Link URL; the page redirects the seller there.
+ * @property {(o?: { returnPath?: string }) => Promise<{ url: string }>} createOnboardingLink
+ *   Real: POST /me/connect-link { returnPath } -> Stripe Account Link URL; Stripe sends the seller back to returnPath.
  */
 
 /** @type {PaymentProvider} */
@@ -54,12 +54,12 @@ const mockPayments = {
     await delay(200);
     return { status: currentUserRecord().connectStatus ?? 'not_started' };
   },
-  async createOnboardingLink() {
+  async createOnboardingLink({ returnPath = '/account/payouts' } = {}) {
     await delay(500);
     // Mock: pretend the seller finished Stripe's hosted onboarding. The page then refreshes the status.
     currentUserRecord().connectStatus = 'complete';
     save();
-    return { url: '#/account/payouts' };
+    return { url: `#${returnPath}` };
   },
 };
 

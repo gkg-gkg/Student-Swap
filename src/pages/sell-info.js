@@ -1,6 +1,6 @@
 import { html } from '../lib/html.js';
 import { pricing } from '../config/pricing.js';
-import { sellerPayout } from '../lib/fees.js';
+import { sellerPayout, cardFeeText } from '../lib/fees.js';
 import { formatPence } from '../lib/money.js';
 import { icons } from '../components/icons.js';
 import { brand } from '../config/brand.js';
@@ -16,8 +16,8 @@ const features = [
   ],
   [
     icons.cash,
-    'See your payout first',
-    `A flat ${pricing.sellerFeeBps / 100}% fee, taken from the sale. No listing fee, no hidden extras.`,
+    'Free to sell',
+    `StudentSwap takes nothing from sellers. The only cost is Stripe's card fee (about ${cardFeeText()}), and you see your payout before you publish.`,
     'mint',
     false,
   ],

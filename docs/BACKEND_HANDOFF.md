@@ -246,19 +246,26 @@ Rules (all configurable in `src/config/pricing.js`; mirror them in backend confi
 
 ## 7. Stripe
 
-**Model: separate charges and transfers** with **Connect Express** accounts. Do **not** rely on card authorization holds for escrow: they expire after about 7 days, and events can be weeks away.
+**Implemented in [`backend-reference/payments.mjs`](../backend-reference/payments.mjs)** (14 unit tests). Wire its `db` interface to your database and expose the routes below.
 
-1. **Checkout.** `POST /payments/session` creates a PaymentIntent on the **platform** account for `order.totalPence` (GBP), `metadata.orderId`, `transfer_group = order_<id>`, `automatic_payment_methods: enabled`. Return `client_secret`. The frontend mounts the Payment Element (`src/payments/stripe.js`) and calls `confirmPayment` with `redirect: 'if_required'`.
-2. **Webhook is the source of truth.** `POST /stripe/webhook` (verify the signature with the webhook secret). Handle:
-   - `payment_intent.succeeded` → order `paid` (and `delivered` if PDF), listing `sold`, create `payouts` row (`held`, `release_at = event.ends_at + 24h`), schedule release, notify seller. Idempotent on `payment_intent.id`.
-   - `payment_intent.payment_failed` → keep the hold until it lapses.
-   - `charge.refunded` → reconcile.
-   - `account.updated` → update `connect_status` from `charges_enabled/payouts_enabled/requirements`.
-3. **Payout release** (scheduled job): if the payout is `held`, no open report, and now ≥ `release_at`: create a **Transfer** to the seller's connected account for `amount_pence` (`source_transaction = charge`, `transfer_group`), set `released`, order `completed`. Stripe then pays the seller out on their schedule.
-4. **Refunds:** admin "refund" → `stripe.refunds.create({ payment_intent })`; order `refunded`. If a transfer was already made (shouldn't be, since reports freeze it), reverse it.
-5. **Seller onboarding:** `POST /me/connect-link` creates the Express account if needed and returns an Account Link; `GET /me/connect-status` reads the account. Sellers can list before onboarding, but release requires `payouts_enabled`; otherwise leave the payout `eligible` and notify them.
-6. **Economics:** the 5% + 5% platform fees must cover Stripe's processing fee (and Connect fees) on the charge. Check the margin on cheap tickets (a £6 ticket) before launch.
-7. Test with Stripe test cards (`4242…` success, `4000 0000 0000 0002` declined). Use test mode keys until launch; webhooks per environment.
+**Model: direct charges, the seller pays Stripe's fee, payouts held.** Chosen because with platform-paid fees Stripe charges **£2/month for every seller paid out** plus payout fees, which loses money on most student tickets. With `fees_collector: 'stripe'` Stripe bills the seller its card fee and charges the platform **no Connect fees**.
+
+- **Fees** (`src/config/pricing.js`): buyers pay a **7% booking fee (min 49p)**, sent to us as `application_fee_amount`. Selling is free; Stripe's card fee (about 1.5% + 20p, more for premium/non-UK cards) comes out of the seller's sale.
+- **Seller accounts:** Accounts **v2** (Stripe refuses v1 for new platforms), `dashboard: 'express'`, `identity.country: 'gb'`, `defaults.responsibilities: { fees_collector: 'stripe', losses_collector: 'stripe' }`, `configuration.merchant.capabilities.card_payments`. Payout schedule set to **manual** with the Balance Settings API right after creation.
+- **Holding money:** Stripe holds manual payouts for at most **90 days**. Payout happens 24h after the event ends, so sellers can only list events starting within **85 days** (`pricing.maxListingLeadDays`; enforce it server-side too).
+- **Payout setup before listing:** `POST /listings` must return 403 `payouts_required` unless the seller's `card_payments` and `payouts` capabilities are `active`.
+
+Routes:
+
+1. `POST /payments/session { orderId }` → `{ clientSecret, stripeAccount }`. PaymentIntent created **on the seller's account** (`Stripe-Account` header) for `order.totalPence` with `application_fee_amount = order.buyerFeePence`. The frontend initialises Stripe.js with `{ stripeAccount }` (`src/payments/stripe.js`).
+2. `POST /me/connect-link { returnPath? }` → `{ url }`. Creates the account on first use, then an Account Link; Stripe returns the seller to `returnPath` (same-site paths only).
+3. `GET /me/connect-status` → `not_started | pending | complete`, read live from the account's capabilities.
+4. `POST /stripe/webhook` must be a **Connect** webhook endpoint ("events on connected accounts"). Pass the raw body. `payment_intent.succeeded` → `markOrderPaid` with the seller's real net (from the charge's balance transaction); `charge.refunded` → `markOrderRefunded`.
+5. **Release job** (EventBridge or cron): for payouts due, no open report, and enough *available* balance (card funds take a few days to settle) → `payouts.create` on the seller's account. Otherwise mark `eligible` and retry.
+6. **Refunds:** `refunds.create({ payment_intent, refund_application_fee: true })` on the seller's account, so the buyer gets everything back. Stripe's original card fee is not returned (the seller bears it). Only before the payout is released.
+7. Disputes are debited from the seller's balance, including Stripe's £20 dispute fee.
+
+**Before going live:** confirm this setup with Stripe support (sandbox acceptance isn't a live approval), add a Connect webhook per environment, and test onboarding with Stripe's test data. Test cards: `4242 4242 4242 4242` succeeds, `4000 0000 0000 0002` is declined.
 
 PCI scope stays minimal because card data only ever lives in Stripe's iframe. `customHttp.yml` already allows `js.stripe.com`.
 

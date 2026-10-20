@@ -41,8 +41,8 @@
 
 ## Fees (placeholders, one config)
 
-- Buyer fee: **5%** of ticket price, shown from the first price display.
-- Seller fee: **5%** of ticket price, deducted from payout (shown in live payout preview).
+- Buyer booking fee: **7% (min 49p)** per order, shown from the first price display.
+- Selling is free. Stripe's card fee (about 1.5% + 20p) is paid by the seller from the sale (estimated in the payout preview). Sellers set up payouts before their first listing; events can be listed from 85 days before they start.
 - Money in integer pence. Rounding rule: round half up per fee, in one `fees.js` util.
 
 ## Escrow and payouts
@@ -107,7 +107,7 @@ Design direction, then tokens/components, then landing (sign-off), then auth, br
 
 - Auction model (reminder): falling-price listings and a "Wanted" board, both capped at the original price.
 - Verify each university email domain; replace Terms and Privacy; legal review of the price cap and the "verified/protected" claims.
-- Stripe economics: check that the 5% + 5% fees cover processing on cheap tickets.
+- Stripe economics: resolved by having sellers pay Stripe's card fee (no Connect fees for the platform). Confirm the setup with Stripe support before live.
 
 ---
 

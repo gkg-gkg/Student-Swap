@@ -1,3 +1,6 @@
+import { pricing } from '../config/pricing.js';
+import { buyerFeeText, cardFeeText } from '../lib/fees.js';
+
 // Full FAQ, grouped. Original copy; keep claims in line with the product rules in config/pricing.js.
 export const faqGroups = [
   {
@@ -26,7 +29,7 @@ export const faqGroups = [
       ],
       [
         'What fees do I pay?',
-        'A 5% buyer fee on top of the ticket price. You see the total, including the fee, before you pay. There are no surprise extras.',
+        `A ${buyerFeeText()} booking fee on top of the ticket price. You see the total, including the fee, before you pay. There are no surprise extras.`,
       ],
       [
         'How long do I have to pay?',
@@ -47,7 +50,15 @@ export const faqGroups = [
     items: [
       [
         'How much does it cost to sell?',
-        'A 5% seller fee, taken from the sale price. The payout preview shows exactly what you will receive before you publish.',
+        `Nothing from StudentSwap. The only cost is Stripe's card fee (about ${cardFeeText()} of the payment), taken from the sale. The payout preview shows what you will receive before you publish.`,
+      ],
+      [
+        'How far ahead can I list a ticket?',
+        `Up to ${pricing.maxListingLeadDays} days before the event. Our payments partner can only hold money for a limited time, and we always hold it until after the event.`,
+      ],
+      [
+        'Do I need to set anything up before selling?',
+        'Yes, once: connect your bank account through Stripe, our payments partner, so we can pay you. It takes a few minutes and you do it before your first listing.',
       ],
       [
         'When do I get paid?',

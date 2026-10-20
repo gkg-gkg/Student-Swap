@@ -9,7 +9,6 @@ import { startCountdowns } from '../components/countdown.js';
 import { toast } from '../components/toast.js';
 import { busy } from '../lib/forms.js';
 import { navigate } from '../router.js';
-import { pricing } from '../config/pricing.js';
 
 /** @param {{ params: Record<string, string>, query: URLSearchParams }} ctx */
 export default async function render({ params, query }) {
@@ -53,7 +52,7 @@ export default async function render({ params, query }) {
         ? `Your accepted offer: ${formatPence(order.unitPence, { exact: true })} each (listed at ${formatPence(listedUnit, { exact: true })})`
         : `${formatPence(order.unitPence, { exact: true })} each · original price ${formatPence(order.listing?.faceValuePence ?? order.unitPence, { exact: true })}`,
     },
-    { label: `Buyer fee (${pricing.buyerFeeBps / 100}%)`, value: formatPence(order.buyerFeePence, { exact: true }) },
+    { label: 'Booking fee', value: formatPence(order.buyerFeePence, { exact: true }) },
     { label: 'Total to pay', value: formatPence(order.totalPence, { exact: true }), strong: true },
   ];
 

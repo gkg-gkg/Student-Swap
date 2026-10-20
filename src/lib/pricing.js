@@ -17,3 +17,14 @@ export function validateListingPrice(pricePence, faceValuePence, multiplier = pr
   if (pricePence > max) return { ok: false, reason: 'above_cap', max };
   return { ok: true };
 }
+
+/**
+ * Listing window: an event can only be listed once it starts within `maxListingLeadDays`, because Stripe can hold a
+ * seller's money for at most 90 days and we pay out after the event. Returns when listing opens.
+ * @param {string} eventStartsAt ISO @param {Date} [now]
+ * @returns {{ ok: true } | { ok: false, opensAt: Date }}
+ */
+export function listingWindow(eventStartsAt, now = new Date(), leadDays = pricing.maxListingLeadDays) {
+  const opensAt = new Date(new Date(eventStartsAt).getTime() - leadDays * 86400000);
+  return now >= opensAt ? { ok: true } : { ok: false, opensAt };
+}

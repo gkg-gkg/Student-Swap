@@ -8,7 +8,7 @@ const realStripe = new Stripe('sk_test_unused');
 const SECRET = 'whsec_test';
 const NOW = new Date('2026-10-20T12:00:00Z');
 
-function setup({ transfersStatus = 'active' } = {}) {
+function setup({ sellerStatus = 'active', availablePence = 10000 } = {}) {
   const calls = [];
   const rec =
     (name, ret) =>
@@ -24,8 +24,12 @@ function setup({ transfersStatus = 'active' } = {}) {
         metadata: { orderId: 'o1' },
       })),
     },
+    // £9.10 paid; Stripe fee 34p and our 60p booking fee already taken off `net` on the seller's account.
+    charges: { retrieve: rec('charge.retrieve', { balance_transaction: { net: 816 }, application_fee_amount: 60 }) },
     accountLinks: { create: rec('link.create', { url: 'https://connect.stripe.com/setup/x' }) },
-    transfers: { create: rec('transfer.create', { id: 'tr_1' }) },
+    balanceSettings: { update: rec('balanceSettings.update', {}) },
+    balance: { retrieve: rec('balance.retrieve', { available: [{ currency: 'gbp', amount: availablePence }] }) },
+    payouts: { create: rec('payout.create', { id: 'po_1' }) },
     refunds: { create: rec('refund.create', { id: 're_1' }) },
     v2: {
       core: {
@@ -33,7 +37,12 @@ function setup({ transfersStatus = 'active' } = {}) {
           create: rec('acct.create', { id: 'acct_1' }),
           retrieve: rec('acct.retrieve', () => ({
             configuration: {
-              recipient: { capabilities: { stripe_balance: { stripe_transfers: { status: transfersStatus } } } },
+              merchant: {
+                capabilities: {
+                  card_payments: { status: sellerStatus },
+                  stripe_balance: { payouts: { status: sellerStatus } },
+                },
+              },
             },
           })),
         },
@@ -45,21 +54,22 @@ function setup({ transfersStatus = 'active' } = {}) {
       o1: {
         id: 'o1',
         buyerId: 'buyer',
+        sellerId: 'seller',
         status: 'pending_payment',
-        totalPence: 893,
+        totalPence: 910,
+        buyerFeePence: 60,
         holdExpiresAt: '2026-10-20T12:02:00Z',
       },
     },
-    users: { seller: { id: 'seller', email: 's@bham.ac.uk', displayName: 'Sam' } },
+    users: { seller: { id: 'seller', email: 's@bham.ac.uk', displayName: 'Sam', stripeAccountId: 'acct_1' } },
     payouts: {
       p1: {
         id: 'p1',
         orderId: 'o1',
         sellerId: 'seller',
-        amountPence: 807,
+        amountPence: 816,
         status: 'held',
         releaseAt: '2026-10-19T00:00:00Z',
-        chargeId: 'ch_1',
         hasOpenReport: false,
       },
     },
@@ -93,13 +103,13 @@ const webhook = (payments, event) => {
 };
 const named = (calls, name) => calls.filter((c) => c[0] === name);
 
-test('checkout: PaymentIntent uses the order total from the database, in GBP, linked to the order', async () => {
+test("checkout: charge on the seller's account, total from our database, booking fee as the application fee", async () => {
   const { payments, calls } = setup();
-  const { clientSecret } = await payments.createPaymentSession({ userId: 'buyer', orderId: 'o1' });
-  assert.equal(clientSecret, 'pi_1_secret');
+  const res = await payments.createPaymentSession({ userId: 'buyer', orderId: 'o1' });
+  assert.deepEqual(res, { clientSecret: 'pi_1_secret', stripeAccount: 'acct_1' });
   const [, params, opts] = named(calls, 'pi.create')[0];
-  assert.deepEqual([params.amount, params.currency, params.transfer_group], [893, 'gbp', 'order_o1']);
-  assert.equal(opts.idempotencyKey, 'order-o1-pi');
+  assert.deepEqual([params.amount, params.currency, params.application_fee_amount], [910, 'gbp', 60]);
+  assert.deepEqual(opts, { stripeAccount: 'acct_1', idempotencyKey: 'order-o1-pi' });
 });
 
 test('checkout: reloading re-uses the same PaymentIntent', async () => {
@@ -109,13 +119,15 @@ test('checkout: reloading re-uses the same PaymentIntent', async () => {
   assert.equal(named(calls, 'pi.create').length, 1);
 });
 
-test("checkout: someone else's order, a paid order, or an expired hold is refused", async () => {
+test("checkout: someone else's order, an expired hold, a paid order or a restricted seller is refused", async () => {
   const { payments, data } = setup();
   await assert.rejects(payments.createPaymentSession({ userId: 'intruder', orderId: 'o1' }), { status: 404 });
   data.orders.o1.holdExpiresAt = '2026-10-20T11:59:00Z';
   await assert.rejects(payments.createPaymentSession({ userId: 'buyer', orderId: 'o1' }), /expired/);
   data.orders.o1.status = 'paid';
   await assert.rejects(payments.createPaymentSession({ userId: 'buyer', orderId: 'o1' }), PaymentsError);
+  const restricted = setup({ sellerStatus: 'restricted' });
+  await assert.rejects(restricted.payments.createPaymentSession({ userId: 'buyer', orderId: 'o1' }), { status: 409 });
 });
 
 test('webhook: a forged signature is rejected', async () => {
@@ -123,17 +135,19 @@ test('webhook: a forged signature is rejected', async () => {
   await assert.rejects(payments.handleWebhook({ rawBody: '{}', signature: 't=1,v1=forged' }), { status: 400 });
 });
 
-test('webhook: payment_intent.succeeded marks the order paid with the charge id', async () => {
+test("webhook: payment_intent.succeeded records what actually reached the seller's balance", async () => {
   const { payments, calls } = setup();
   await webhook(payments, {
     id: 'evt_1',
     object: 'event',
     type: 'payment_intent.succeeded',
+    account: 'acct_1',
     data: {
-      object: { id: 'pi_1', amount_received: 893, currency: 'gbp', latest_charge: 'ch_1', metadata: { orderId: 'o1' } },
+      object: { id: 'pi_1', amount_received: 910, currency: 'gbp', latest_charge: 'ch_1', metadata: { orderId: 'o1' } },
     },
   });
-  assert.deepEqual(named(calls, 'db.paid')[0].slice(1), ['o1', { paymentIntentId: 'pi_1', chargeId: 'ch_1' }]);
+  assert.equal(named(calls, 'charge.retrieve')[0][3].stripeAccount, 'acct_1');
+  assert.deepEqual(named(calls, 'db.paid')[0].slice(1), ['o1', { paymentIntentId: 'pi_1', sellerNetPence: 816 }]);
 });
 
 test('webhook: a payment for the wrong amount is flagged, not marked paid', async () => {
@@ -142,6 +156,7 @@ test('webhook: a payment for the wrong amount is flagged, not marked paid', asyn
     id: 'evt_2',
     object: 'event',
     type: 'payment_intent.succeeded',
+    account: 'acct_1',
     data: {
       object: { id: 'pi_1', amount_received: 100, currency: 'gbp', latest_charge: 'ch_1', metadata: { orderId: 'o1' } },
     },
@@ -150,34 +165,43 @@ test('webhook: a payment for the wrong amount is flagged, not marked paid', asyn
   assert.equal(named(calls, 'db.flag').length, 1);
 });
 
-test('payouts setup: creates the seller account once, as a GB recipient, then an onboarding link', async () => {
-  const { payments, calls } = setup();
-  const { url } = await payments.createConnectLink({ userId: 'seller' });
+test('payouts setup: seller account where Stripe collects its fee from the seller, payouts held, created once', async () => {
+  const { payments, calls, data } = setup();
+  delete data.users.seller.stripeAccountId;
+  const { url } = await payments.createConnectLink({ userId: 'seller', returnPath: '/sell/new?event=evt-1' });
   await payments.createConnectLink({ userId: 'seller' });
   assert.match(url, /connect\.stripe\.com/);
   const creates = named(calls, 'acct.create');
   assert.equal(creates.length, 1);
-  assert.equal(creates[0][1].configuration.recipient.capabilities.stripe_balance.stripe_transfers.requested, true);
-  assert.equal(named(calls, 'link.create')[1][1].account, 'acct_1');
+  assert.deepEqual(creates[0][1].defaults.responsibilities, { fees_collector: 'stripe', losses_collector: 'stripe' });
+  assert.equal(creates[0][1].configuration.merchant.capabilities.card_payments.requested, true);
+  const [, settings, opts] = named(calls, 'balanceSettings.update')[0];
+  assert.equal(settings.payments.payouts.schedule.interval, 'manual');
+  assert.equal(opts.stripeAccount, 'acct_1');
+  assert.equal(named(calls, 'link.create')[0][1].return_url, 'https://example.test/#/sell/new?event=evt-1');
+});
+
+test('payouts setup: an off-site return path is ignored', async () => {
+  const { payments, calls } = setup();
+  await payments.createConnectLink({ userId: 'seller', returnPath: '//evil.example/steal' });
+  assert.equal(named(calls, 'link.create')[0][1].return_url, 'https://example.test/#/account/payouts');
 });
 
 test('payouts setup: status maps to not_started / pending / complete', async () => {
-  assert.equal((await setup().payments.getConnectStatus({ userId: 'seller' })).status, 'not_started');
-  const pending = setup({ transfersStatus: 'restricted' });
-  pending.data.users.seller.stripeAccountId = 'acct_1';
+  const none = setup();
+  delete none.data.users.seller.stripeAccountId;
+  assert.equal((await none.payments.getConnectStatus({ userId: 'seller' })).status, 'not_started');
+  const pending = setup({ sellerStatus: 'restricted' });
   assert.equal((await pending.payments.getConnectStatus({ userId: 'seller' })).status, 'pending');
-  const done = setup();
-  done.data.users.seller.stripeAccountId = 'acct_1';
-  assert.equal((await done.payments.getConnectStatus({ userId: 'seller' })).status, 'complete');
+  assert.equal((await setup().payments.getConnectStatus({ userId: 'seller' })).status, 'complete');
 });
 
-test('release: transfers the seller share, tied to the original charge, exactly once', async () => {
-  const { payments, calls, data } = setup();
-  data.users.seller.stripeAccountId = 'acct_1';
+test("release: pays out the seller's money from their own balance, exactly once", async () => {
+  const { payments, calls } = setup();
   assert.equal((await payments.releasePayout({ payoutId: 'p1' })).status, 'released');
-  const [, params, opts] = named(calls, 'transfer.create')[0];
-  assert.deepEqual([params.amount, params.destination, params.source_transaction], [807, 'acct_1', 'ch_1']);
-  assert.equal(opts.idempotencyKey, 'payout-p1');
+  const [, params, opts] = named(calls, 'payout.create')[0];
+  assert.deepEqual([params.amount, params.currency], [816, 'gbp']);
+  assert.deepEqual(opts, { stripeAccount: 'acct_1', idempotencyKey: 'payout-p1' });
 });
 
 test('release: not before the release time, never with an open report', async () => {
@@ -187,17 +211,26 @@ test('release: not before the release time, never with an open report', async ()
   const reported = setup();
   reported.data.payouts.p1.hasOpenReport = true;
   assert.equal((await reported.payments.releasePayout({ payoutId: 'p1' })).status, 'frozen');
-  assert.equal(named([...early.calls, ...reported.calls], 'transfer.create').length, 0);
+  assert.equal(named([...early.calls, ...reported.calls], 'payout.create').length, 0);
 });
 
-test('release: waits (eligible) if the seller has not finished onboarding', async () => {
-  const { payments, calls, data } = setup({ transfersStatus: 'restricted' });
-  data.users.seller.stripeAccountId = 'acct_1';
+test("release: waits (eligible, retried later) if the buyer's money hasn't settled yet", async () => {
+  const { payments, calls } = setup({ availablePence: 500 });
   assert.equal((await payments.releasePayout({ payoutId: 'p1' })).status, 'eligible');
-  assert.equal(named(calls, 'transfer.create').length, 0);
+  assert.equal(named(calls, 'payout.create').length, 0);
+  assert.equal(named(calls, 'db.eligible').length, 1);
 });
 
-test('refund: refused once the seller has been paid', async () => {
+test("refund: full refund on the seller's account, including our booking fee", async () => {
+  const { payments, calls, data } = setup();
+  data.orders.o1.paymentIntentId = 'pi_1';
+  await payments.refundOrder({ orderId: 'o1' });
+  const [, params, opts] = named(calls, 'refund.create')[0];
+  assert.deepEqual(params, { payment_intent: 'pi_1', refund_application_fee: true });
+  assert.equal(opts.stripeAccount, 'acct_1');
+});
+
+test('refund: refused once the seller has been paid out', async () => {
   const { payments, data } = setup();
   Object.assign(data.orders.o1, { paymentIntentId: 'pi_1', payoutReleased: true });
   await assert.rejects(payments.refundOrder({ orderId: 'o1' }), { status: 409 });

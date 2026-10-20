@@ -11,7 +11,7 @@ import {
 } from './mock/db.js';
 import { mockCall } from './mock/util.js';
 import { enrichListing, findEvent } from './mock/helpers.js';
-import { validateListingPrice } from '../lib/pricing.js';
+import { validateListingPrice, listingWindow } from '../lib/pricing.js';
 import { compareFingerprint } from '../lib/ticket-fingerprint.js';
 import { features } from '../config/features.js';
 import { verifySync } from './ticket-ai.mock.js';
@@ -49,6 +49,11 @@ export function createListing(input) {
     const tier = event.tiers.find((t) => t.id === input.tierId);
     if (!tier) throw new ApiError(400, 'Choose a ticket type.');
     if (new Date(event.endsAt).getTime() <= Date.now()) throw new ApiError(400, 'That event has already finished.');
+    // Sellers must be able to get paid before a ticket goes live (Stripe holds their money until after the event).
+    if ((me.connectStatus ?? 'not_started') !== 'complete')
+      throw new ApiError(403, 'Set up payouts before you list a ticket.', 'payouts_required');
+    const lead = listingWindow(event.startsAt);
+    if (!lead.ok) throw new ApiError(400, 'You can only list tickets for events in the next few months.', 'too_early');
     if (!Number.isInteger(input.quantity) || input.quantity < 1 || input.quantity > 6)
       throw new ApiError(400, 'Quantity must be 1 to 6.');
     if (!input.declarationsAccepted) throw new ApiError(400, 'Please accept the declarations.');

@@ -45,6 +45,7 @@ export const mockAuth = {
         role: 'user',
         createdAt: nowIso(),
         profileComplete: false,
+        connectStatus: 'not_started', // set up payouts with Stripe before the first listing
         ageConfirmed: false,
         ratingAvg: 0,
         ratingCount: 0,

@@ -101,8 +101,8 @@ const href = await page.locator('a:has-text("Check out")').first().getAttribute(
 await page.click(`a[href="${href}"]`);
 await page.waitForSelector('#pay-form');
 check(
-  'offer checkout uses the accepted price (2 x 40.00 + 5% = 84.00)',
-  (await page.textContent('#pay-btn')).includes('£84.00'),
+  'offer checkout uses the accepted price (2 x 40.00 + 7% = 85.60)',
+  (await page.textContent('#pay-btn')).includes('£85.60'),
 );
 check('checkout notes the accepted offer', (await page.textContent('.breakdown')).includes('accepted offer'));
 

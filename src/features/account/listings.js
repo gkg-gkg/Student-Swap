@@ -95,12 +95,12 @@ function editPrice(l, reload) {
       const update = () => {
         const p = poundsToPence(input.value);
         if (Number.isNaN(p) || !validateListingPrice(p, l.faceValuePence).ok) return mount(pv, html``);
-        const { sellerFee, payout } = sellerPayout(p * l.quantity);
+        const { cardFee, payout } = sellerPayout(p * l.quantity);
         mount(
           pv,
           priceBreakdown(
             [
-              { label: 'Seller fee (5%)', value: `−${formatPence(sellerFee, { exact: true })}` },
+              { label: 'Card processing (Stripe, est.)', value: `−${formatPence(cardFee, { exact: true })}` },
               { label: 'You receive', value: formatPence(payout, { exact: true }), strong: true },
             ],
             'Payout',

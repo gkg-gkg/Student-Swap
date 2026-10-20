@@ -19,7 +19,7 @@ function rng(seed) {
 }
 
 export const MOCK_PASSWORD = 'Password1!';
-export const DB_VERSION = 6;
+export const DB_VERSION = 7; // bump whenever the seed's shape changes (v7: seller pays the card fee, payout setup)
 
 /** @param {Date} [nowDate] */
 export function buildSeed(nowDate = new Date()) {
@@ -64,6 +64,7 @@ export function buildSeed(nowDate = new Date()) {
     createdAt: at(-24 * (60 + Math.floor(rand() * 400))),
     profileComplete: true,
     ageConfirmed: true,
+    connectStatus: 'complete', // seeded sellers already finished Stripe payout setup
     ratingAvg: rating,
     ratingCount: sales,
     completedSales: sales,
@@ -464,13 +465,13 @@ export function buildSeed(nowDate = new Date()) {
       ...extra,
     };
     orders.push(o);
-    const { sellerFee, payout } = sellerPayout(l.pricePence * l.quantity);
+    const { cardFee, payout } = sellerPayout(l.pricePence * l.quantity);
     payouts.push({
       id: `p-${id}`,
       orderId: id,
       sellerId: l.sellerId,
       grossPence: l.pricePence * l.quantity,
-      sellerFeePence: sellerFee,
+      cardFeePence: cardFee,
       amountPence: payout,
       status: status === 'completed' ? 'released' : status === 'reported' ? 'frozen' : 'held',
       releaseAt: o.payoutReleaseAt,

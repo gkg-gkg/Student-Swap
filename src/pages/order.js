@@ -99,8 +99,8 @@ export default async function render({ params, query, user, rerender }) {
             [
               { label: 'Sale price', value: formatPence(o.payout.grossPence, { exact: true }) },
               {
-                label: `Seller fee (${pricing.sellerFeeBps / 100}%)`,
-                value: `−${formatPence(o.payout.sellerFeePence, { exact: true })}`,
+                label: 'Card processing (Stripe)',
+                value: `−${formatPence(o.payout.cardFeePence, { exact: true })}`,
               },
               { label: 'Your payout', value: formatPence(o.payout.amountPence, { exact: true }), strong: true },
             ],

@@ -48,9 +48,7 @@ check('orders shows purchases + sales', (await page.locator('.section-title').co
 await go(page, '/account/payouts');
 await page.waitForSelector('.stats');
 check('payouts totals', (await page.locator('.stat').count()) >= 3);
-await page.click('[data-connect]');
-await page.waitForSelector('.badge--ok');
-check('connect onboarding placeholder completes', true);
+check('seeded seller has payouts set up', (await page.textContent('.connect')).includes('Ready to be paid'));
 
 await go(page, '/account/notifications');
 await page.waitForSelector('.note');

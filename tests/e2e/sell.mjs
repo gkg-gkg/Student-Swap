@@ -14,9 +14,32 @@ const pdf = (name) => {
 const { browser, page, errors } = await launch();
 await go(page, '/');
 await page.evaluate(() => localStorage.clear());
+await page.reload(); // re-seed the mock DB
 await signIn(page);
+
+// New sellers set up payouts first, and events too far ahead (Stripe's 90-day hold limit) can't be listed yet.
+await page.evaluate(() => {
+  const db = JSON.parse(localStorage.getItem('ss.mockdb'));
+  db.users.find((u) => u.email === 'demo@bham.ac.uk').connectStatus = 'not_started';
+  const day = 86400000;
+  const far = { ...db.events[0], id: 'evt-far', title: 'Far Future Ball' };
+  far.startsAt = new Date(Date.now() + 120 * day).toISOString();
+  far.endsAt = new Date(Date.now() + 120 * day + 5 * 3600000).toISOString();
+  far.lastEntryAt = far.startsAt;
+  db.events.push(far);
+  localStorage.setItem('ss.mockdb', JSON.stringify(db));
+});
+await page.reload();
 await go(page, '/sell/new');
+await page.waitForSelector('[data-connect]');
+check('sellers must set up payouts before listing', (await page.textContent('h1')).includes('Set up payouts'));
+await page.click('[data-connect]');
 await page.waitForSelector('#ev-list .pick');
+check('after payout setup the listing form opens', true);
+const farPick = page.locator('#ev-list .pick', { hasText: 'Far Future Ball' });
+check('events more than 85 days away are greyed out', await farPick.locator('input').isDisabled());
+check('...and say when listing opens', (await farPick.textContent()).includes('Listing opens'));
+
 check('continue disabled until an event is chosen', await page.locator('[data-next]').isDisabled());
 await page.fill('#ev-search', 'disco');
 await page.locator('#ev-list .pick').first().click();
@@ -50,7 +73,8 @@ check('above-face price rejected', (await page.textContent('#price-error')).incl
 check('next disabled when above cap', await page.locator('[data-next]').isDisabled());
 await page.fill('#price', '8');
 check('payout preview shows', (await page.textContent('#preview')).includes('You receive'));
-check('preview math: 2x£8 less 5% = £15.20', (await page.textContent('#preview')).includes('£15.20'));
+// 2 x £8 = £16; buyer pays £17.12 (7% booking fee); Stripe card fee est. 1.5% of £17.12 + 20p = 46p
+check('preview math: 2x£8 less est. card fee = £15.54', (await page.textContent('#preview')).includes('£15.54'));
 await page.click('[data-next]');
 
 // Review: declarations required
