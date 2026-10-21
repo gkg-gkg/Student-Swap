@@ -3,3 +3,5 @@ dist
 public/vendor
 backend-reference/node_modules
 package-lock.json
+backend/node_modules
+backend/cdk.out

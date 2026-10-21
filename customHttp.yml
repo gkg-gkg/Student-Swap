@@ -17,6 +17,6 @@ customHeaders:
           style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
           font-src https://fonts.gstatic.com;
           img-src 'self' data: blob: https://*.stripe.com;
-          connect-src 'self' https://*.execute-api.*.amazonaws.com https://cognito-idp.*.amazonaws.com https://*.s3.*.amazonaws.com https://api.stripe.com;
+          connect-src 'self' https://*.amazonaws.com https://api.stripe.com;
           frame-src https://js.stripe.com https://hooks.stripe.com;
           base-uri 'self'; form-action 'self'; object-src 'none'

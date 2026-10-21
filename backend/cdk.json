@@ -1,0 +1,8 @@
+{
+  "app": "node infra/app.mjs",
+  "context": {
+    "siteOrigin": "http://localhost:5173",
+    "requirePayouts": "true",
+    "malwareScan": "false"
+  }
+}

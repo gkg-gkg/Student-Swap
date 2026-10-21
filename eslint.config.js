@@ -2,7 +2,16 @@ import js from '@eslint/js';
 import globals from 'globals';
 
 export default [
-  { ignores: ['node_modules/**', 'dist/**', 'public/vendor/**', 'backend-reference/node_modules/**'] },
+  {
+    ignores: [
+      'node_modules/**',
+      'dist/**',
+      'public/vendor/**',
+      'backend-reference/node_modules/**',
+      'backend/node_modules/**',
+      'backend/cdk.out/**',
+    ],
+  },
   js.configs.recommended,
   {
     files: ['src/**/*.js'],
@@ -13,7 +22,14 @@ export default [
     },
   },
   {
-    files: ['scripts/**/*.mjs', 'tests/**/*.mjs', 'backend-reference/**/*.mjs', 'eslint.config.js', 'src/**/*.test.js'],
+    files: [
+      'scripts/**/*.mjs',
+      'tests/**/*.mjs',
+      'backend-reference/**/*.mjs',
+      'backend/**/*.mjs',
+      'eslint.config.js',
+      'src/**/*.test.js',
+    ],
     languageOptions: { ecmaVersion: 2023, sourceType: 'module', globals: { ...globals.node, ...globals.browser } },
     rules: { 'no-unused-vars': ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrors: 'none' }] },
   },

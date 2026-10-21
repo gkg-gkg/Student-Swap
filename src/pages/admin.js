@@ -1,6 +1,6 @@
 import { html, mount } from '../lib/html.js';
 import { admin } from '../api/index.js';
-import { cities } from '../data/regions.js';
+import { cities, venues, venuesInCity } from '../data/regions.js';
 import { eventTypeLabels, reportReasonLabels } from '../data/labels.js';
 import { formatPence } from '../lib/money.js';
 import { formatDateTime } from '../lib/time.js';
@@ -102,7 +102,7 @@ async function listings({ reload }) {
     <div class="row">${l.seller ? html`${avatar(l.seller, 'sm')}<a class="link" href="#/seller/${l.seller.id}">${l.seller.displayName}</a> <span class="small muted">${l.seller.completedSales} sales</span>` : ''}<span>${l.quantity} × ${l.tier?.name} at <strong>${formatPence(l.pricePence, { exact: true })}</strong> <span class="muted small">(original ${formatPence(l.faceValuePence)})</span></span>${l.aiAssisted ? badge('Autofilled by AI', 'blue') : ''}</div>
     <div><strong class="small">Why it is here</strong>
       ${l.reviewReasons?.length ? html`<ul class="reasons">${l.reviewReasons.map((/** @type {any} */ r) => html`<li><span class="reasons__src">${SOURCE[r.source] ?? r.source}</span>${r.severity ? badge(r.severity, r.severity === 'high' ? 'hot' : 'warn') : ''}<span>${r.message}</span></li>`)}</ul>` : html`<p class="muted small">No automatic reason recorded.</p>`}</div>
-    <div class="preview"><strong>${l.file?.name ?? 'ticket file'}</strong><span class="small muted">Private file. In production this opens through a short-lived presigned link, never a public URL.</span><button class="btn btn--secondary btn--sm" type="button" data-preview>Open preview (placeholder)</button></div>
+    <div class="preview"><strong>${l.file?.name ?? 'ticket file'}</strong><span class="small muted">Private file. Opens through a link that works for 60 seconds, never a public URL.</span><button class="btn btn--secondary btn--sm" type="button" data-preview="${l.id}">Open ticket file</button></div>
     <form class="stack" data-form novalidate><div class="form-error" role="alert"></div>
       ${field({ id: `note-${l.id}`, name: 'note', label: 'Note to the seller', required: true, hint: 'Required if you reject. Shown to the seller.', textarea: true, rows: 2 })}
       <div class="row"><button class="btn btn--primary btn--sm" type="submit" data-decision="approve">Approve</button><button class="btn btn--danger btn--sm" type="submit" data-decision="reject">Reject</button></div></form>
@@ -112,11 +112,25 @@ async function listings({ reload }) {
       ? html`<div class="stack"><p class="muted">${queue.length} ${queue.length === 1 ? 'listing' : 'listings'} waiting, oldest first.</p>${queue.map(card)}</div>`
       : emptyState({ title: 'Nothing to review', body: 'Listings flagged by the automatic checks show up here.' }),
     onMount(/** @type {HTMLElement} */ root) {
-      root
-        .querySelectorAll('[data-preview]')
-        .forEach((b) =>
-          b.addEventListener('click', () => toast('Placeholder: the real preview is a presigned S3 link.')),
-        );
+      root.querySelectorAll('[data-preview]').forEach((b) =>
+        b.addEventListener('click', async () => {
+          // Open the tab first (inside the click) so pop-up blockers allow it, then point it at the fresh link.
+          const tab = window.open('', '_blank');
+          try {
+            const { url } = await admin.ticketFileUrl(
+              /** @type {string} */ (/** @type {HTMLElement} */ (b).dataset.preview),
+            );
+            if (url && tab) tab.location.href = url;
+            else {
+              tab?.close();
+              toast('Demo mode: there is no stored file to open.');
+            }
+          } catch (err) {
+            tab?.close();
+            toast(err instanceof Error ? err.message : 'Could not open the file.', 'error');
+          }
+        }),
+      );
       root.querySelectorAll('form[data-form]').forEach((f) =>
         f.addEventListener('submit', async (e) => {
           e.preventDefault();
@@ -197,6 +211,7 @@ async function reports({ reload }) {
 
 /** ---------- Events: requests + create ---------- */
 const SLOTS = ['21:00', '21:30', '22:00', '22:30', '23:00', '23:30'];
+const OTHER_VENUE = 'other';
 /** @param {{ reload: () => void }} ctx */
 async function events({ reload }) {
   const requests = await admin.eventRequests();
@@ -208,8 +223,9 @@ async function events({ reload }) {
       <section class="card" aria-labelledby="ae"><h2 id="ae" class="h3">Add an event</h2>
         <form id="event-form" class="stack" novalidate><div class="form-error" role="alert"></div>
           ${field({ id: 'title', label: 'Event name', required: true })}
-          ${field({ id: 'venue', label: 'Venue', required: true })}
           <div class="two-col">${selectField({ id: 'cityId', label: 'City', options: cities.map((c) => ({ value: c.id, label: c.name })), placeholder: 'Choose…', required: true })}${selectField({ id: 'type', label: 'Type', options: Object.entries(eventTypeLabels).map(([value, label]) => ({ value, label })), value: 'club_night', required: true })}</div>
+          ${selectField({ id: 'venueId', label: 'Venue', options: [], placeholder: 'Choose a city first', required: true })}
+          <div id="venue-other" hidden>${field({ id: 'venue', label: 'Venue name', required: true, hint: "For venues that aren't in our list yet." })}</div>
           <div class="two-col">${field({ id: 'date', label: 'Date', type: 'date', value: tomorrow, required: true })}${selectField({ id: 'time', label: 'Start time', options: SLOTS.map((t) => ({ value: t, label: t })), value: '22:00', required: true })}</div>
           <div class="two-col">${field({ id: 'tier1', label: 'Ticket type', value: 'General release', required: true })}${field({ id: 'price1', label: 'Original price', prefix: '£', inputmode: 'decimal', required: true })}</div>
           <div class="two-col">${field({ id: 'tier2', label: 'Second ticket type' })}${field({ id: 'price2', label: 'Original price', prefix: '£', inputmode: 'decimal' })}</div>
@@ -219,6 +235,23 @@ async function events({ reload }) {
     </div>`,
     onMount(/** @type {HTMLElement} */ root) {
       const form = /** @type {HTMLFormElement} */ (root.querySelector('#event-form'));
+      const citySel = /** @type {HTMLSelectElement} */ (form.elements.namedItem('cityId'));
+      const venueSel = /** @type {HTMLSelectElement} */ (form.elements.namedItem('venueId'));
+      const venueName = /** @type {HTMLInputElement} */ (form.elements.namedItem('venue'));
+      const otherBox = /** @type {HTMLElement} */ (root.querySelector('#venue-other'));
+      const syncOther = () => (otherBox.hidden = venueSel.value !== OTHER_VENUE);
+      // Venue choices follow the city; "Other venue" reveals a free-text name.
+      const fillVenues = () => {
+        const list = venuesInCity(citySel.value);
+        venueSel.replaceChildren(
+          new Option(citySel.value ? 'Choose…' : 'Choose a city first', ''),
+          ...list.map((v) => new Option(`${v.name} (${v.area})`, v.id)),
+          ...(citySel.value ? [new Option('Other venue…', OTHER_VENUE)] : []),
+        );
+        syncOther();
+      };
+      citySel.addEventListener('change', fillVenues);
+      venueSel.addEventListener('change', syncOther);
       root.querySelectorAll('[data-dismiss]').forEach((b) =>
         b.addEventListener('click', async () => {
           await admin.dismissEventRequest(/** @type {string} */ (/** @type {HTMLElement} */ (b).dataset.dismiss));
@@ -230,7 +263,17 @@ async function events({ reload }) {
           const r = requests.find((/** @type {any} */ x) => x.id === /** @type {HTMLElement} */ (b).dataset.fill);
           if (!r) return;
           /** @type {HTMLInputElement} */ (form.elements.namedItem('title')).value = r.name;
-          /** @type {HTMLInputElement} */ (form.elements.namedItem('venue')).value = r.venue;
+          // Requests are free text: pre-select a matching venue from our list, otherwise use "Other venue".
+          const known = venues.find((v) => v.name.toLowerCase() === String(r.venue).trim().toLowerCase());
+          if (known) {
+            citySel.value = known.cityId;
+            fillVenues();
+            venueSel.value = known.id;
+          } else if (citySel.value) {
+            venueSel.value = OTHER_VENUE;
+          }
+          venueName.value = known ? '' : r.venue;
+          syncOther();
           if (r.date) /** @type {HTMLInputElement} */ (form.elements.namedItem('date')).value = r.date;
           form.scrollIntoView({ behavior: 'smooth' });
         }),
@@ -239,8 +282,10 @@ async function events({ reload }) {
         e.preventDefault();
         clearFieldErrors(form);
         const v = values(form);
-        for (const k of ['title', 'venue', 'cityId', 'date', 'tier1'])
+        for (const k of ['title', 'cityId', 'venueId', 'date', 'tier1'])
           if (!v[k]?.trim()) setFieldError(form, k, 'Required.');
+        const venue = v.venueId === OTHER_VENUE ? undefined : venues.find((x) => x.id === v.venueId);
+        if (v.venueId === OTHER_VENUE && !v.venue?.trim()) setFieldError(form, 'venue', 'Required.');
         const p1 = poundsToPence(v.price1 ?? '');
         if (Number.isNaN(p1) || p1 < 100) setFieldError(form, 'price1', 'Enter an original price of at least £1.');
         const tiers = [{ name: v.tier1, faceValuePence: p1 }];
@@ -256,7 +301,8 @@ async function events({ reload }) {
         try {
           await admin.createEvent({
             title: v.title,
-            venue: v.venue,
+            venue: venue ? venue.name : v.venue,
+            venueId: venue?.id,
             cityId: v.cityId,
             type: v.type,
             startsAt: londonToUtc(v.date, hh, mm),

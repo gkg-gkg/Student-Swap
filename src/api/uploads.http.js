@@ -9,8 +9,21 @@ export async function putFile(uploadUrl, file) {
   return { ok: true };
 }
 /**
- * GET /uploads/check?key=... -> { result, message, reasons } (barcode decode + duplicate check; poll until not "checking").
+ * GET /uploads/check?key=... -> { result, message, reasons } (barcode decode + duplicate check), polled until not "checking".
  * The server decodes the stored file and recomputes hashes itself; the client fingerprint is only a UX hint and is not sent.
  * @param {string} key @param {unknown} [_fingerprint]
  */
-export const checkTicketFile = (key, _fingerprint) => request('/uploads/check', { query: { key } });
+export async function checkTicketFile(key, _fingerprint) {
+  // The scan runs asynchronously after the upload lands in S3 (usually a few seconds). Poll for up to ~60s.
+  for (let i = 0; i < 30; i++) {
+    /** @type {{ result: import('../types/index.js').BarcodeCheck, message: string, reasons: import('../types/index.js').ReviewReason[] }} */
+    const res = await request('/uploads/check', { query: { key } });
+    if (res.result !== 'checking') return res;
+    await new Promise((resolve) => setTimeout(resolve, i < 5 ? 1000 : 2000));
+  }
+  return {
+    result: /** @type {const} */ ('needs_review'),
+    message: 'Our checks are taking longer than usual, so a person will look at this ticket before it goes live.',
+    reasons: [],
+  };
+}

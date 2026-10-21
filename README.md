@@ -51,7 +51,8 @@ src/
   pages/                one lazy-loaded module per route
   router.js             hash router, route guards (auth, admin, guest), per-page meta
   styles/               tokens, base, components, app, landing, pages
-backend-reference/      Lambda handlers for the Claude features (runnable tests, no key needed)
+backend/                AWS backend for events, uploads, ticket scan and listings (CDK; see backend/README.md)
+backend-reference/      Lambda handlers for the Claude and Stripe features (runnable tests, no key needed)
 docs/                   SPEC.md, BACKEND_HANDOFF.md
 scripts/                serve, build, write-env, bundle-amplify
 tests/e2e/              Playwright suites (uses your installed Chrome)
@@ -59,7 +60,7 @@ tests/e2e/              Playwright suites (uses your installed Chrome)
 
 ## Going live (AWS, Stripe, Claude)
 
-1. **Backend:** build it from [docs/BACKEND_HANDOFF.md](docs/BACKEND_HANDOFF.md). The mock API in `src/api/*.mock.js` is the executable spec for every response.
+1. **Backend:** steps 2 and 3 (events, uploads, ticket scan, listings, plus login) are built in [backend/](backend/README.md): `cd backend && npx cdk deploy`. The rest follows [docs/BACKEND_HANDOFF.md](docs/BACKEND_HANDOFF.md). The mock API in `src/api/*.mock.js` is the executable spec for every response.
 2. **Amplify Hosting:** connect the repo (it reads `amplify.yml` and `customHttp.yml`). In Amplify → Environment variables set:
    `STUDENTSWAP_USE_MOCKS=false`, `API_BASE_URL`, `AWS_REGION`, `COGNITO_USER_POOL_ID`, `COGNITO_CLIENT_ID`, `STRIPE_PUBLISHABLE_KEY`.
 3. **Cognito:** add the **pre-sign-up Lambda** that enforces the university email allowlist. The frontend check alone is not enough (handoff §3).

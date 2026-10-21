@@ -11,7 +11,7 @@ import {
 } from './mock/db.js';
 import { mockCall } from './mock/util.js';
 import { enrichListing, eventSummary, findEvent, publicUserById } from './mock/helpers.js';
-import { universities } from '../data/regions.js';
+import { universities, venues } from '../data/regions.js';
 
 /** GET /admin/listings/review */
 export function reviewQueue() {
@@ -48,6 +48,22 @@ export function reviewListing(id, { decision, note }) {
     save();
     return enrichListing(l);
   });
+}
+
+/**
+ * POST /admin/listings/:id/file-url -> { url, expiresInSeconds }: a fresh 60-second link to the private ticket file.
+ * The mock stores no file bytes, so there is nothing to open.
+ * @param {string} id @returns {Promise<{ url: string | null, expiresInSeconds: number }>}
+ */
+export function ticketFileUrl(id) {
+  return mockCall(
+    () => {
+      requireAdmin();
+      if (!db.listings.some((l) => l.id === id)) throw new ApiError(404, 'Listing not found.', 'not_found');
+      return { url: null, expiresInSeconds: 60 };
+    },
+    { ms: 150 },
+  );
 }
 
 /** GET /admin/reports?status=open */
@@ -158,16 +174,19 @@ export function dismissEventRequest(id) {
   );
 }
 
-/** @typedef {{ title: string, venue: string, cityId: string, type: string, startsAt: string, durationHours: number, description?: string, ageRestriction?: string, universityIds?: string[], tiers: { name: string, faceValuePence: number }[] }} CreateEventInput */
+/** @typedef {{ title: string, venue: string, venueId?: string, cityId: string, type: string, startsAt: string, durationHours: number, description?: string, ageRestriction?: string, universityIds?: string[], tiers: { name: string, faceValuePence: number }[] }} CreateEventInput */
 
 /**
  * POST /admin/events: events are admin-curated, so this is the only way an event is created.
- * @param {{ title: string, venue: string, cityId: string, type: string, startsAt: string, durationHours: number, description?: string, ageRestriction?: string, universityIds?: string[], tiers: { name: string, faceValuePence: number }[] }} input
+ * @param {{ title: string, venue: string, venueId?: string, cityId: string, type: string, startsAt: string, durationHours: number, description?: string, ageRestriction?: string, universityIds?: string[], tiers: { name: string, faceValuePence: number }[] }} input
  */
 export function createEvent(input) {
   return mockCall(() => {
     requireAdmin();
     if (!input.title?.trim() || !input.venue?.trim()) throw new ApiError(400, 'Title and venue are required.');
+    const venue = input.venueId ? venues.find((v) => v.id === input.venueId) : undefined;
+    if (input.venueId && (!venue || venue.cityId !== input.cityId))
+      throw new ApiError(400, "That venue isn't in the chosen city.");
     if (
       !input.tiers?.length ||
       input.tiers.some((t) => !t.name?.trim() || !Number.isInteger(t.faceValuePence) || t.faceValuePence < 100)
@@ -181,7 +200,8 @@ export function createEvent(input) {
       id,
       title: input.title.trim(),
       description: input.description?.trim() || 'More details coming soon.',
-      venue: input.venue.trim(),
+      venue: venue ? venue.name : input.venue.trim(),
+      venueId: venue?.id ?? null,
       cityId: input.cityId,
       universityIds: input.universityIds ?? [],
       type: /** @type {any} */ (input.type),

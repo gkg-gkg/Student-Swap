@@ -138,8 +138,10 @@ check('stats by university (11 rows)', (await page.locator('.table tbody tr').co
 await go(page, '/admin/events');
 await page.waitForSelector('#event-form');
 await page.fill('#title', 'Test Social Night');
-await page.fill('#venue', 'The Test Rooms');
 await page.selectOption('#cityId', 'leicester');
+check('venue list follows the city', (await page.locator('#venueId option[value="fan-club-leicester"]').count()) === 1);
+await page.selectOption('#venueId', 'other');
+await page.fill('#venue', 'The Test Rooms');
 await page.fill('#price1', '9');
 await page.click('#event-form button[type=submit]');
 await page.waitForSelector('.toast');

@@ -4,6 +4,8 @@
 /** @typedef {{ id: string, regionId: string, name: string }} City */
 /** @typedef {{ id: string, cityId: string, name: string, short: string, emailDomains: string[] }} University */
 
+/** @typedef {{ id: string, name: string, cityId: string, area: string, kind: 'club' | 'students_union' | 'live_venue' }} Venue */
+
 /** @typedef {'club_night' | 'ball' | 'social' | 'gig'} EventType */
 /** @typedef {'coral' | 'blue' | 'amber' | 'mint' | 'night'} ArtTone */
 
@@ -15,7 +17,8 @@
  * @property {string} id
  * @property {string} title
  * @property {string} description
- * @property {string} venue
+ * @property {string} venue display name
+ * @property {string | null} [venueId] set when the venue is one of data/regions.js `venues`
  * @property {string} cityId
  * @property {string[]} universityIds
  * @property {EventType} type

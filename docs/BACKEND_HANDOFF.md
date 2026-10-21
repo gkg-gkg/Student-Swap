@@ -261,7 +261,7 @@ Routes:
 2. `POST /me/connect-link { returnPath? }` → `{ url }`. Creates the account on first use, then an Account Link; Stripe returns the seller to `returnPath` (same-site paths only).
 3. `GET /me/connect-status` → `not_started | pending | complete`, read live from the account's capabilities.
 4. `POST /stripe/webhook` must be a **Connect** webhook endpoint ("events on connected accounts"). Pass the raw body. `payment_intent.succeeded` → `markOrderPaid` with the seller's real net (from the charge's balance transaction); `charge.refunded` → `markOrderRefunded`.
-5. **Release job** (EventBridge or cron): for payouts due, no open report, and enough *available* balance (card funds take a few days to settle) → `payouts.create` on the seller's account. Otherwise mark `eligible` and retry.
+5. **Release job** (EventBridge or cron): for payouts due, no open report, and enough _available_ balance (card funds take a few days to settle) → `payouts.create` on the seller's account. Otherwise mark `eligible` and retry.
 6. **Refunds:** `refunds.create({ payment_intent, refund_application_fee: true })` on the seller's account, so the buyer gets everything back. Stripe's original card fee is not returned (the seller bears it). Only before the payout is released.
 7. Disputes are debited from the seller's balance, including Stripe's £20 dispute fee.
 
@@ -370,9 +370,9 @@ Send from a verified domain with DKIM/SPF/DMARC. Honour `notification_prefs`. Ev
 
 ## 13. Go-live order (suggested)
 
-1. Cognito + pre-sign-up Lambda + `/me`, `/me/profile` → flip `USE_MOCKS=false` locally and sign up for real.
-2. Events (seed from `regions.js` + admin create) and read endpoints (`/events`, `/listings`, `/sellers`).
-3. Uploads + ticket-scan pipeline + listing creation (with the duplicate check).
+1. Cognito + pre-sign-up Lambda + `/me`, `/me/profile` → flip `USE_MOCKS=false` locally and sign up for real. **Minimal version built in [`backend/`](../backend/README.md)** (the allowlist, the users row, `GET /me`, `POST /me/profile`).
+2. Events (seed from `regions.js` + admin create) and read endpoints (`/events`, `/listings`, `/sellers`). **Built in `backend/`**, including the venue list.
+3. Uploads + ticket-scan pipeline + listing creation (with the duplicate check). **Built in `backend/`**, plus the admin listing-review queue from step 5.
 4. Stripe: `/payments/session`, webhook, `/orders`, delivery, downloads.
 5. Offers, reports, admin endpoints, notifications + SES.
 6. Schedulers (hold/offer/listing expiry, payout release) and Stripe Connect transfers.
